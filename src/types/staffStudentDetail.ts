@@ -10,7 +10,6 @@ export interface StaffStudentDetail {
 
     phone: string | null;
 
-    year: number;
 
     major: {
         id: number;
@@ -25,7 +24,6 @@ export interface StaffStudentDetail {
     pulses: {
         id: number;
         bpm: number;
-        spo2: number | null;
         recordedAt: string;
     }[];
 

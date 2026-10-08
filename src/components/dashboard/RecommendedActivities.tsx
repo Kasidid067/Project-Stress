@@ -1,4 +1,5 @@
 import DashboardSection from "./DashboardSection";
+import { activityCategoryLabel } from "@/lib/displayLabels";
 
 import type {
     RecommendedActivity,
@@ -22,7 +23,7 @@ export default function RecommendedActivities({
                 {activities.map(activity => (
                     <div
                         key={activity.id}
-                        className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4"
+                        className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4 dark:border-teal-900/35 dark:bg-teal-950/20"
                     >
 
                         <h3 className="font-semibold text-[var(--content-text)]">
@@ -38,7 +39,7 @@ export default function RecommendedActivities({
                         >
 
                             <span>
-                                {activity.category}
+                                {activityCategoryLabel(activity.category)}
                             </span>
 
                             <span>

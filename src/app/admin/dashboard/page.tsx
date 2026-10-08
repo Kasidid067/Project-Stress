@@ -24,8 +24,6 @@ export default function AdminDashboardPage() {
     loading,
   } = useAdminDashboard();
   
-  console.log("Dashboard :", dashboard);
-
   if (loading || !dashboard) {
     return (
       <div className="flex h-[70vh] items-center justify-center text-[var(--content-muted)]">
@@ -36,10 +34,10 @@ export default function AdminDashboardPage() {
 
   return (
 
-    <main className="space-y-8">
+    <main className="admin-page wellness-page space-y-8">
 
       <WelcomeCard
-        fullname="Administrator"
+        fullname="ผู้ดูแลระบบ"
       />
 
       {/* SUMMARY */}
@@ -52,7 +50,7 @@ export default function AdminDashboardPage() {
           color="bg-blue-600"
         />
         <SummaryCard
-          title="นักศึกษา"
+          title="นิสิต"
           value={dashboard.totalStudents}
           icon={<GraduationCap size={32} />}
           color="bg-green-600"
@@ -83,9 +81,7 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="col-span-12 xl:col-span-8">
-          <RecentAssessmentTable
-            assessments={dashboard.latestAssessments}
-          />
+          <RecentAssessmentTable />
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Activity } from "@/types/activity";
+import { createPortal } from "react-dom";
 
 interface Props {
     open: boolean;
@@ -16,8 +17,8 @@ export default function DeleteActivityDialog({
     onConfirm,
 }: Props) {
     if (!open || !activity) return null;
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    return createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <div className="theme-card w-full max-w-md rounded-2xl p-6">
                 <h2 className="text-2xl font-bold text-red-600">
                     ลบกิจกรรม
@@ -49,6 +50,7 @@ export default function DeleteActivityDialog({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

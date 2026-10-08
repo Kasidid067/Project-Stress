@@ -8,7 +8,7 @@ export default function Card({
   children,
 }: CardProps) {
   return (
-    <div className="theme-card rounded-3xl p-8">
+    <div className="wellness-card p-6 sm:p-8">
       {children}
     </div>
   );

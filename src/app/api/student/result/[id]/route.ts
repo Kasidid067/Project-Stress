@@ -1,5 +1,9 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import {
+    addActivityRecommendationReasons,
+    recommendActivitiesFromST5,
+} from "@/lib/st5ActivityRecommendation";
 import { NextResponse } from "next/server";
 import { Role } from "@prisma/client";
 
@@ -46,7 +50,11 @@ export async function GET(
 
                 include: {
 
-                    assessment: true,
+                    assessment: {
+                        include: {
+                            answers: true,
+                        },
+                    },
 
                     user: {
 
@@ -77,14 +85,6 @@ export async function GET(
 
         const activities =
             await prisma.activity.findMany({
-
-                where: {
-
-                    stressLevel:
-                        result.stressLevel,
-
-                },
-
                 orderBy: {
 
                     title: "asc",
@@ -93,11 +93,20 @@ export async function GET(
 
             });
 
+        const recommendedActivities = recommendActivitiesFromST5(
+            activities,
+            result.assessment.answers,
+            activities.filter((activity) => activity.stressLevel === result.stressLevel)
+        );
+
         return NextResponse.json({
 
             result,
 
-            activities,
+            activities: addActivityRecommendationReasons(
+                recommendedActivities,
+                result.assessment.answers
+            ),
 
         });
 

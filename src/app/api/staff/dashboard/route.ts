@@ -28,6 +28,7 @@ export async function GET() {
                 role: Role.STUDENT,
             },
             include: {
+                major: true,
                 results: {
                     take: 1,
                     orderBy: {
@@ -46,6 +47,8 @@ export async function GET() {
                 role: Role.ADVISOR,
             },
         });
+    const followUpLimit = new Date();
+    followUpLimit.setDate(followUpLimit.getDate() - 30);
     let low = 0;
     let medium = 0;
     let high = 0;
@@ -65,6 +68,35 @@ export async function GET() {
                 break;
         }
     });
+    const studentSummaries = students.map((student) => {
+        const latest = student.results[0] ?? null;
+        return {
+            id: student.id,
+            fullname: student.fullname,
+            studentId: student.studentId,
+            phone: student.phone,
+            major: student.major.name,
+            latestScore: latest?.stressScore ?? null,
+            latestLevel: latest?.stressLevel ?? null,
+            assessedAt: latest?.createdAt ?? null,
+        };
+    });
+    const highRiskStudents = studentSummaries
+        .filter((student) => student.latestLevel === StressLevel.HIGH)
+        .sort((left, right) => new Date(right.assessedAt ?? 0).getTime() - new Date(left.assessedAt ?? 0).getTime())
+        .slice(0, 8);
+    const overdueStudents = studentSummaries.filter(
+        (student) => !student.assessedAt || new Date(student.assessedAt) < followUpLimit
+    );
+    const majorSummaryMap = new Map<string, { total: number; high: number }>();
+    studentSummaries.forEach((student) => {
+        const current = majorSummaryMap.get(student.major) ?? { total: 0, high: 0 };
+        current.total++;
+        if (student.latestLevel === StressLevel.HIGH) current.high++;
+        majorSummaryMap.set(student.major, current);
+    });
+    const pendingSupportRequests = await prisma.studentSupportRequest.count({ where: { status: "PENDING" } });
+
     return NextResponse.json({
         totalStudents:
             students.length,
@@ -73,5 +105,11 @@ export async function GET() {
         low,
         medium,
         high,
+        highRiskStudents,
+        overdueStudents,
+        pendingSupportRequests,
+        majorSummaries: [...majorSummaryMap.entries()]
+            .map(([major, summary]) => ({ major, ...summary }))
+            .sort((left, right) => right.high - left.high || right.total - left.total),
     });
 }

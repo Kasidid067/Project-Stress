@@ -25,6 +25,10 @@ export default function AdminActivitiesPage() {
     keyword,
     setKeyword,
   ] = useState("");
+  const [categoryFilter, setCategoryFilter] =
+    useState("ALL");
+  const [levelFilter, setLevelFilter] =
+    useState("ALL");
   const [
     open,
     setOpen,
@@ -39,34 +43,46 @@ export default function AdminActivitiesPage() {
     setDeleting,
   ] =
     useState<Activity | null>(null);
-  const filteredActivities =
-    useMemo(() => {
-      const key =
-        keyword
-          .trim()
-          .toLowerCase();
-      return activities.filter(
-        (activity) => {
-          return (
-            activity.title
-              .toLowerCase()
-              .includes(key)
-            ||
-            activity.description
-              .toLowerCase()
-              .includes(key)
-            ||
-            activity.category
-              .toString()
-              .toLowerCase()
-              .includes(key)
-          );
-        }
-      );
-    }, [
-      activities,
-      keyword,
-    ]);
+  const filteredActivities = useMemo(() => {
+    const key =
+      keyword
+        .trim()
+        .toLowerCase();
+    return activities.filter(
+      (activity) => {
+        const keywordMatch =
+          activity.title
+            .toLowerCase()
+            .includes(key)
+          ||
+          activity.description
+            .toLowerCase()
+            .includes(key);
+        const categoryMatch =
+          categoryFilter === "ALL"
+          ||
+          activity.category ===
+          categoryFilter;
+        const levelMatch =
+          levelFilter === "ALL"
+          ||
+          activity.stressLevel ===
+          levelFilter;
+        return (
+          keywordMatch
+          &&
+          categoryMatch
+          &&
+          levelMatch
+        );
+      }
+    );
+  }, [
+    activities,
+    keyword,
+    categoryFilter,
+    levelFilter,
+  ]);
   async function handleSubmit(
     data: ActivityFormData
   ) {
@@ -159,14 +175,14 @@ export default function AdminActivitiesPage() {
   }
 
   return (
-    <main className="space-y-8 p-8">
+    <main className="admin-page wellness-page space-y-8 p-5 sm:p-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold text-green-700">
             จัดการกิจกรรม
           </h1>
           <p className="mt-2 text-gray-500">
-            เพิ่ม แก้ไข และลบกิจกรรมสำหรับนักศึกษา
+            เพิ่ม แก้ไข และลบกิจกรรมสำหรับนิสิต
           </p>
         </div>
         <button
@@ -180,22 +196,78 @@ export default function AdminActivitiesPage() {
           เพิ่มกิจกรรม
         </button>
       </div>
-      <div className="rounded-xl bg-white p-6 shadow">
-        <div className="relative mb-6 max-w-md">
-          <Search
-            size={18}
-            className="absolute left-4 top-4 text-gray-400"
-          />
-          <input
-            value={keyword}
+      <div className="admin-surface p-6">
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+
+          <div className="relative">
+
+            <Search
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+
+            <input
+              value={keyword}
+              onChange={(e) =>
+                setKeyword(
+                  e.target.value
+                )
+              }
+              placeholder="ค้นหากิจกรรม..."
+              className="w-full rounded-xl border py-3 pl-11 pr-4"
+            />
+          </div>
+
+          <select
+            value={categoryFilter}
             onChange={(e) =>
-              setKeyword(
+              setCategoryFilter(
                 e.target.value
               )
             }
-            placeholder="ค้นหากิจกรรม..."
-            className="w-full rounded-xl border py-3 pl-11 pr-4"
-          />
+            className="rounded-xl border p-3"
+          >
+            <option value="ALL">
+              ทุกประเภท
+            </option>
+            <option value="RELAX">
+              ผ่อนคลาย
+            </option>
+            <option value="EXERCISE">
+              ออกกำลังกาย
+            </option>
+            <option value="MEDITATION">
+              สมาธิ
+            </option>
+            <option value="MUSIC">
+              ดนตรี
+            </option>
+            <option value="OTHER">
+              อื่น ๆ
+            </option>
+          </select>
+          <select
+            value={levelFilter}
+            onChange={(e) =>
+              setLevelFilter(
+                e.target.value
+              )
+            }
+            className="rounded-xl border p-3"
+          >
+            <option value="ALL">
+              ทุกระดับ
+            </option>
+            <option value="LOW">
+              ความเครียดต่ำ
+            </option>
+            <option value="MEDIUM">
+              ความเครียดปานกลาง
+            </option>
+            <option value="HIGH">
+              ความเครียดสูง
+            </option>
+          </select>
         </div>
         <ActivityTable
           activities={filteredActivities}
@@ -227,12 +299,12 @@ export default function AdminActivitiesPage() {
         }}
         onConfirm={confirmDelete}
       />
-      <div className="rounded-xl bg-white p-6 shadow">
+      <div className="admin-surface p-6">
         <h2 className="mb-4 text-xl font-bold">
           สรุปข้อมูล
         </h2>
         <div className="grid gap-6 md:grid-cols-4">
-          <div className="rounded-xl bg-green-50 p-5">
+          <div className="wellness-card bg-emerald-50/70 p-5 dark:bg-emerald-950/20">
             <p className="text-gray-500">
               กิจกรรมทั้งหมด
             </p>
@@ -240,7 +312,7 @@ export default function AdminActivitiesPage() {
               {activities.length}
             </h3>
           </div>
-          <div className="rounded-xl bg-green-50 p-5">
+          <div className="wellness-card bg-teal-50/70 p-5 dark:bg-teal-950/20">
             <p className="text-gray-500">
               ผ่อนคลาย
             </p>
@@ -254,7 +326,7 @@ export default function AdminActivitiesPage() {
               }
             </h3>
           </div>
-          <div className="rounded-xl bg-yellow-50 p-5">
+          <div className="wellness-card bg-amber-50/70 p-5 dark:bg-amber-950/20">
             <p className="text-gray-500">
               ออกกำลังกาย
             </p>
@@ -268,7 +340,7 @@ export default function AdminActivitiesPage() {
               }
             </h3>
           </div>
-          <div className="rounded-xl bg-red-50 p-5">
+          <div className="wellness-card bg-violet-50/70 p-5 dark:bg-violet-950/20">
             <p className="text-gray-500">
               สมาธิ / อื่น ๆ
             </p>

@@ -70,13 +70,19 @@ export async function GET(
                         activity: true,
                     },
                 },
+
+                pulses: {
+                    orderBy: {
+                        recordedAt: "desc",
+                    },
+                },
             },
         });
 
         if (!student) {
             return NextResponse.json(
                 {
-                    message: "ไม่พบนักศึกษา",
+                    message: "ไม่พบนิสิต",
                 },
                 {
                     status: 404,

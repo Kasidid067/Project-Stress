@@ -1,303 +1,288 @@
 "use client";
 
-import { useParams } from "next/navigation";
-
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import {
-    User,
-    HeartPulse,
-    Brain,
-    Activity,
+    Loader2,
+    Search,
+    Eye,
 } from "lucide-react";
+import TablePagination from "@/components/common/TablePagination";
 
-import {
-    useAdvisorStudentDetail,
-} from "@/hooks/useAdvisorStudentDetail";
+interface Student {
+    id: number;
+    studentId: string;
+    fullname: string;
+    email: string;
 
-export default function AdvisorStudentDetailPage() {
+    major: {
+        id: number;
+        name: string;
+    };
 
-    const params = useParams();
+    latestResult: {
+        score: number;
+        level: "LOW" | "MEDIUM" | "HIGH";
+        bpm: number | null;
+        createdAt: string;
+    } | null;
+}
 
-    const {
+interface Major {
+    id: number;
+    name: string;
+}
 
-        student,
+export default function AdvisorStudentsPage() {
 
-        loading,
+    const [loading, setLoading] = useState(true);
 
-    } = useAdvisorStudentDetail(
-        Number(params.id)
+    const [students, setStudents] = useState<Student[]>([]);
+
+    const [majors, setMajors] = useState<Major[]>([]);
+
+    const [keyword, setKeyword] = useState("");
+
+    const [majorId, setMajorId] = useState("ALL");
+
+    const [stressLevel, setStressLevel] = useState("ALL");
+    const [page, setPage] = useState(1);
+    const pageSize = 10;
+
+    async function loadStudents() {
+
+        setLoading(true);
+
+        try {
+
+            const params = new URLSearchParams();
+
+            if (keyword)
+                params.append("keyword", keyword);
+
+            if (majorId !== "ALL")
+                params.append(
+                    "majorId",
+                    majorId
+                );
+
+            if (stressLevel !== "ALL")
+                params.append(
+                    "stressLevel",
+                    stressLevel
+                );
+
+            const res = await fetch(
+                `/api/advisor/students?${params.toString()}`
+            );
+
+            const data = await res.json();
+
+            setStudents(data);
+
+        } finally {
+
+            setLoading(false);
+
+        }
+    }
+
+    async function loadMajors() {
+
+        try {
+
+            const res = await fetch(
+                "/api/majors"
+            );
+
+            const data = await res.json();
+
+            setMajors(data);
+
+        } catch {
+
+            setMajors([]);
+
+        }
+
+    }
+
+    useEffect(() => {
+
+        loadMajors();
+
+    }, []);
+
+    useEffect(() => {
+
+        loadStudents();
+
+    }, [
+        keyword,
+        majorId,
+        stressLevel,
+    ]);
+
+    const total = useMemo(() => {
+
+        return students.length;
+
+    }, [students]);
+    const totalPages = Math.max(1, Math.ceil(students.length / pageSize));
+    const currentPage = Math.min(page, totalPages);
+    const visibleStudents = students.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
     );
 
-    if (loading) {
-
-        return (
-
-            <main className="flex h-[70vh] items-center justify-center">
-
-                กำลังโหลด...
-
-            </main>
-
-        );
-
+    function badge(level: string) {
+        switch (level) {
+            case "LOW":
+                return (
+                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                        ต่ำ
+                    </span>
+                );
+            case "MEDIUM":
+                return (
+                    <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
+                        ปานกลาง
+                    </span>
+                );
+            default:
+                return (
+                    <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                        สูง
+                    </span>
+                );
+        }
     }
-
-    if (!student) {
-
         return (
-
-            <main className="flex h-[70vh] items-center justify-center">
-
-                ไม่พบข้อมูล
-
-            </main>
-
-        );
-
-    }
-
-    const latest =
-        student.results[0];
-
-    return (
-
-        <main className="space-y-8 p-8">
-
+        <main className="advisor-page space-y-6 p-2 sm:p-4">
             {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-green-700">
+                        นิสิตในที่ปรึกษา
+                    </h1>
+                    <p className="mt-1 text-sm text-gray-500">
+                        รายชื่อนิสิตที่อยู่ในความดูแลของคุณ
+                    </p>
 
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow" style={{ boxShadow: "var(--shadow)" }}>
+                </div>
 
-                <div className="flex items-center gap-6">
+                <div className="rounded-xl bg-green-100 px-5 py-3 text-center">
 
-                    <div className="rounded-full bg-[var(--surface-muted)] p-6">
+                    <p className="text-sm text-gray-600">
+                        จำนวนนิสิต
+                    </p>
 
-                        <User
-                            size={45}
-                            className="text-[var(--accent-strong)]"
-                        />
+                    <h2 className="text-2xl font-bold text-green-700">
+                        {total}
+                    </h2>
+
+                </div>
+
+            </div>
+
+            {/* Filter */}
+
+            <div className="grid gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow md:grid-cols-3">
+
+                <div className="relative">
+
+                    <Search
+                        size={18}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+
+                    <input
+                        value={keyword}
+                        onChange={(e) => {
+                            setKeyword(e.target.value);
+                            setPage(1);
+                        }}
+                        placeholder="ค้นหาชื่อ รหัสนิสิต หรืออีเมล"
+                        className="w-full rounded-xl border py-3 pl-11 pr-4"
+                    />
+
+                </div>
+
+                <select
+                    value={stressLevel}
+                    onChange={(e) => {
+                        setStressLevel(e.target.value);
+                        setPage(1);
+                    }}
+                    className="rounded-xl border p-3"
+                >
+
+                    <option value="ALL">
+                        ทุกระดับความเครียด
+                    </option>
+
+                    <option value="LOW">
+                        ต่ำ
+                    </option>
+
+                    <option value="MEDIUM">
+                        ปานกลาง
+                    </option>
+
+                    <option value="HIGH">
+                        สูง
+                    </option>
+
+                </select>
+
+            </div>
+
+            {/* Table */}
+
+            <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow">
+
+                {loading ? (
+
+                    <div className="flex h-72 items-center justify-center">
+
+                        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
 
                     </div>
 
-                    <div>
+                ) : (
 
-                        <h1 className="text-3xl font-bold">
+                    <table className="min-w-full">
 
-                            {student.fullname}
+                        <thead className="bg-green-50">
 
-                        </h1>
+                            <tr>
 
-                        <p className="mt-2 text-[var(--content-muted)]">
-
-                            {student.studentId}
-
-                        </p>
-
-                        <p className="text-[var(--content-muted)]">
-
-                            {student.major.name}
-
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            {/* Summary */}
-
-            <div className="grid gap-6 md:grid-cols-4">
-
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow" style={{ boxShadow: "var(--shadow)" }}>
-
-                    <p className="text-[var(--content-muted)]">
-
-                        คะแนนล่าสุด
-
-                    </p>
-
-                    <h2 className="mt-3 text-4xl font-bold">
-
-                        {
-
-                            latest
-                                ?.stressScore ?? "-"
-
-                        }
-
-                    </h2>
-
-                </div>
-
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow" style={{ boxShadow: "var(--shadow)" }}>
-
-                    <div className="flex items-center gap-2">
-
-                        <HeartPulse />
-
-                        BPM
-
-                    </div>
-
-                    <h2 className="mt-3 text-4xl font-bold">
-
-                        {
-
-                            latest
-                                ?.pulse?.bpm ?? "-"
-
-                        }
-
-                    </h2>
-
-                </div>
-
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow" style={{ boxShadow: "var(--shadow)" }}>
-
-                    <p className="text-[var(--content-muted)]">
-
-                        ระดับ
-
-                    </p>
-
-                    <h2 className="mt-3">
-
-                        {
-                            latest?.stressLevel === "HIGH" ? (
-                                <span className="status-high inline-block rounded-full px-4 py-1 text-lg font-bold">
-                                    สูง
-                                </span>
-                            ) : latest?.stressLevel === "MEDIUM" ? (
-                                <span className="status-medium inline-block rounded-full px-4 py-1 text-lg font-bold">
-                                    ปานกลาง
-                                </span>
-                            ) : latest?.stressLevel === "LOW" ? (
-                                <span className="status-low inline-block rounded-full px-4 py-1 text-lg font-bold">
-                                    ต่ำ
-                                </span>
-                            ) : (
-                                <span className="text-3xl font-bold">-</span>
-                            )
-                        }
-
-                    </h2>
-
-                </div>
-
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow" style={{ boxShadow: "var(--shadow)" }}>
-
-                    <p className="text-[var(--content-muted)]">
-
-                        SpO₂
-
-                    </p>
-
-                    <h2 className="mt-3 text-4xl font-bold">
-
-                        {
-
-                            latest
-                                ?.pulse?.spo2 ?? "-"
-
-                        }
-
-                    </h2>
-
-                </div>
-
-            </div>
-
-            {/* AI */}
-
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow" style={{ boxShadow: "var(--shadow)" }}>
-
-                <h2 className="mb-6 flex items-center gap-3 text-2xl font-bold">
-
-                    <Brain />
-
-                    AI Summary
-
-                </h2>
-
-                <p>
-
-                    {
-
-                        latest
-                            ?.aiSummary ??
-
-                        "-"
-
-                    }
-
-                </p>
-
-            </div>
-
-            {/* Recommendation */}
-
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow" style={{ boxShadow: "var(--shadow)" }}>
-
-                <h2 className="mb-6 text-2xl font-bold">
-
-                    Recommendation
-
-                </h2>
-
-                <p>
-
-                    {
-
-                        latest
-                            ?.recommendation ??
-
-                        "-"
-
-                    }
-
-                </p>
-
-            </div>
-
-            {/* ST5 History */}
-
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow" style={{ boxShadow: "var(--shadow)" }}>
-
-                <h2 className="mb-6 text-2xl font-bold">
-
-                    ประวัติการประเมิน ST-5
-
-                </h2>
-
-                <div className="overflow-x-auto rounded-xl">
-
-                    <table className="w-full">
-
-                        <thead>
-
-                            <tr className="border-b border-[var(--border)] bg-[var(--surface-muted)] text-[var(--content-muted)]">
-
-                                <th className="p-4 text-left">
-
-                                    วันที่
-
+                                <th className="px-4 py-3 text-left">
+                                    รหัสนิสิต
                                 </th>
 
-                                <th>
+                                <th className="px-4 py-3 text-left">
+                                    ชื่อ
+                                </th>
 
+                                <th className="px-4 py-3 text-left">
+                                    หลักสูตร
+                                </th>
+
+                                <th className="px-4 py-3 text-center">
                                     คะแนน
-
                                 </th>
 
-                                <th>
-
+                                <th className="px-4 py-3 text-center">
                                     ระดับ
-
                                 </th>
 
-                                <th>
+                                <th className="px-4 py-3 text-center">
+                                    ชีพจร
+                                </th>
 
-                                    BPM
-
+                                <th className="px-4 py-3 text-center">
+                                    จัดการ
                                 </th>
 
                             </tr>
@@ -306,348 +291,87 @@ export default function AdvisorStudentDetailPage() {
 
                         <tbody>
 
-                            {
-
-                                student.results.map(
-                                    (
-                                        item: any
-                                    ) => (
-
-                                        <tr
-                                            key={
-                                                item.id
-                                            }
-                                            className="border-b border-[var(--border)] transition hover:bg-[var(--surface-muted)]"
-                                        >
-
-                                            <td className="p-4">
-
-                                                {
-
-                                                    new Date(
-                                                        item.createdAt
-                                                    ).toLocaleString(
-                                                        "th-TH"
-                                                    )
-
-                                                }
-
-                                            </td>
-
-                                            <td className="text-center">
-
-                                                {
-
-                                                    item.stressScore
-
-                                                }
-
-                                            </td>
-
-                                            <td className="text-center">
-
-                                                {
-                                                    item.stressLevel === "HIGH" ? (
-                                                        <span className="status-high rounded-full px-3 py-1 text-sm font-semibold">
-                                                            สูง
-                                                        </span>
-                                                    ) : item.stressLevel === "MEDIUM" ? (
-                                                        <span className="status-medium rounded-full px-3 py-1 text-sm font-semibold">
-                                                            ปานกลาง
-                                                        </span>
-                                                    ) : item.stressLevel === "LOW" ? (
-                                                        <span className="status-low rounded-full px-3 py-1 text-sm font-semibold">
-                                                            ต่ำ
-                                                        </span>
-                                                    ) : (
-                                                        item.stressLevel
-                                                    )
-                                                }
-
-                                            </td>
-
-                                            <td className="text-center">
-
-                                                {
-
-                                                    item.pulse?.bpm ??
-                                                    "-"
-
-                                                }
-
-                                            </td>
-
-                                        </tr>
-
-                                    )
-
-                                )
-
-                            }
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-                        {/* Pulse History */}
-
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow" style={{ boxShadow: "var(--shadow)" }}>
-
-                <h2 className="mb-6 flex items-center gap-3 text-2xl font-bold">
-
-                    <HeartPulse />
-
-                    ประวัติการวัดชีพจร
-
-                </h2>
-
-                <table className="w-full">
-
-                    <thead>
-
-                        <tr className="border-b">
-
-                            <th className="p-4 text-left">
-
-                                วันที่
-
-                            </th>
-
-                            <th>
-
-                                BPM
-
-                            </th>
-
-                            <th>
-
-                                SpO₂
-
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        {student.results.map((item: any) => (
-
-                            <tr
-                                key={`pulse-${item.id}`}
-                                className="border-b"
-                            >
-
-                                <td className="p-4">
-
-                                    {new Date(
-                                        item.createdAt
-                                    ).toLocaleString(
-                                        "th-TH"
-                                    )}
-
-                                </td>
-
-                                <td className="text-center">
-
-                                    {item.pulse?.bpm ?? "-"}
-
-                                </td>
-
-                                <td className="text-center">
-
-                                    {item.pulse?.spo2 ?? "-"}
-
-                                </td>
-
-                            </tr>
-
-                        ))}
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-            {/* Activity History */}
-
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow" style={{ boxShadow: "var(--shadow)" }}>
-
-                <h2 className="mb-6 flex items-center gap-3 text-2xl font-bold">
-
-                    <Activity />
-
-                    ประวัติการทำกิจกรรม
-
-                </h2>
-
-                <table className="w-full">
-
-                    <thead>
-
-                        <tr className="border-b">
-
-                            <th className="p-4 text-left">
-
-                                วันที่
-
-                            </th>
-
-                            <th>
-
-                                กิจกรรม
-
-                            </th>
-
-                            <th>
-
-                                ระยะเวลา
-
-                            </th>
-
-                            <th>
-
-                                สถานะ
-
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        {student.activityLogs.length === 0 ? (
-
-                            <tr>
-
-                                <td
-                                    colSpan={4}
-                                    className="p-8 text-center text-[var(--content-muted)]"
-                                >
-
-                                    ยังไม่มีประวัติการทำกิจกรรม
-
-                                </td>
-
-                            </tr>
-
-                        ) : (
-
-                            student.activityLogs.map((log: any) => (
-
-                                <tr
-                                    key={log.id}
-                                    className="border-b"
-                                >
-
-                                    <td className="p-4">
-
-                                        {new Date(
-                                            log.createdAt
-                                        ).toLocaleString(
-                                            "th-TH"
-                                        )}
-
-                                    </td>
-
-                                    <td>
-
-                                        {log.activity.title}
-
-                                    </td>
-
-                                    <td>
-
-                                        {log.activity.duration} นาที
-
-                                    </td>
-
-                                    <td>
-
-                                        {log.completed ? (
-
-                                            <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
-
-                                                สำเร็จ
-
-                                            </span>
-
-                                        ) : (
-
-                                            <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-700">
-
-                                                ยังไม่เสร็จ
-
-                                            </span>
-
-                                        )}
-
+                            {students.length === 0 ? (
+
+                                <tr>
+
+                                    <td
+                                        colSpan={8}
+                                        className="py-12 text-center text-gray-500"
+                                    >
+                                        ไม่พบนิสิต
                                     </td>
 
                                 </tr>
 
-                            ))
+                            ) : (
 
-                        )}
+                                visibleStudents.map((student) => (
 
-                    </tbody>
+                                    <tr
+                                        key={student.id}
+                                        className="border-t transition hover:bg-green-50"
+                                    >
 
-                </table>
+                                        <td className="px-4 py-4">
+                                            {student.studentId}
+                                        </td>
 
+                                        <td className="px-4 py-4">
+
+                                            <div className="font-medium">
+                                                {student.fullname}
+                                            </div>
+
+                                            <div className="text-sm text-gray-500">
+                                                {student.email}
+                                            </div>
+
+                                        </td>
+
+                                        <td className="px-4 py-4">
+                                            {student.major.name}
+                                        </td>
+                                        <td className="text-center font-semibold">
+                                            {student.latestResult?.score ?? "-"}
+                                        </td>
+                                        <td className="text-center">
+                                            {student.latestResult
+                                                ? badge(
+                                                      student.latestResult.level
+                                                  )
+                                                : "-"}
+                                        </td>
+                                        <td className="text-center">
+                                            {student.latestResult?.bpm ?? "-"}
+                                        </td>
+                                        <td>
+                                            <div className="flex justify-center">
+                                                <Link
+                                                    href={`/advisor/students/${student.id}`}
+                                                    className="rounded-lg bg-blue-500 p-2 text-white transition hover:bg-blue-600"
+                                                >
+                                                    <Eye
+                                                        size={18}
+                                                    />
+                                                </Link>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                )}
             </div>
-
-            {/* ST-5 Answers */}
-
-            {latest?.assessment && (
-
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow" style={{ boxShadow: "var(--shadow)" }}>
-
-                    <h2 className="mb-6 text-2xl font-bold">
-
-                        คะแนนแบบประเมิน ST-5 ล่าสุด
-
-                    </h2>
-
-                    <div className="grid gap-4 md:grid-cols-5">
-
-                        {latest.assessment.answers.map(
-                            (answer: any) => (
-
-                                <div
-                                    key={answer.id}
-                                    className="rounded-xl border p-5 text-center"
-                                >
-
-                                    <p className="text-[var(--content-muted)]">
-
-                                        ข้อ {answer.questionNo}
-
-                                    </p>
-
-                                    <h3 className="mt-3 text-4xl font-bold text-green-700">
-
-                                        {answer.score}
-
-                                    </h3>
-
-                                </div>
-
-                            )
-                        )}
-
-                    </div>
-
-                </div>
-
+            {!loading && (
+                <TablePagination
+                    page={currentPage}
+                    totalItems={students.length}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                />
             )}
-
         </main>
-
     );
-
 }

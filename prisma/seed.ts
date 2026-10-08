@@ -38,7 +38,6 @@ async function main() {
       email: "admin@stresscare.com",
       phone: "0000000000",
       password,
-      year: 0,
       role: "ADMIN",
       majorId: 1,
     },

@@ -6,8 +6,8 @@ interface RegisterUserDTO {
   fullname: string;
   phone: string;
   email: string;
-  year: number;
   majorId: number;
+  trackId?: number | null;
   password: string;
 }
 
@@ -40,8 +40,8 @@ export async function registerUser(data: RegisterUserDTO) {
       fullname: data.fullname,
       phone: data.phone,
       email: data.email,
-      year: data.year,
       majorId: data.majorId,
+      trackId: data.trackId ?? null,
       password: hashedPassword,
     },
   });

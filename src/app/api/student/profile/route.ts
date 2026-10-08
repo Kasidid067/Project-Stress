@@ -18,6 +18,14 @@ export async function GET() {
     },
     include: {
       major: true,
+      advisor: {
+        select: {
+          id: true,
+          fullname: true,
+          email: true,
+          phone: true,
+        },
+      },
     },
   });
 

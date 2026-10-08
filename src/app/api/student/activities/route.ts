@@ -1,5 +1,9 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import {
+    addActivityRecommendationReasons,
+    recommendActivitiesFromST5,
+} from "@/lib/st5ActivityRecommendation";
 import { NextResponse } from "next/server";
 import { Role, StressLevel } from "@prisma/client";
 
@@ -32,6 +36,13 @@ export async function GET() {
             orderBy: {
                 createdAt: "desc",
             },
+            include: {
+                assessment: {
+                    include: {
+                        answers: true,
+                    },
+                },
+            },
         });
 
     // ยังไม่เคยประเมิน ST5
@@ -61,18 +72,21 @@ export async function GET() {
             break;
     }
 
-    const activities =
-        await prisma.activity.findMany({
-            where: {
-                stressLevel: {
-                    in: levels,
-                },
-            },
-            orderBy: {
-                createdAt: "desc",
-            },
-        });
+    const activities = await prisma.activity.findMany({
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+    const levelActivities = activities.filter((activity) => levels.includes(activity.stressLevel));
+    const recommendedActivities = recommendActivitiesFromST5(
+            activities,
+            latestResult.assessment.answers,
+            levelActivities
+    );
     return NextResponse.json(
-        activities
+        addActivityRecommendationReasons(
+            recommendedActivities,
+            latestResult.assessment.answers
+        )
     );
 }

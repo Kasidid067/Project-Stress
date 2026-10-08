@@ -10,13 +10,20 @@ export function useAdminUser(id: number) {
 
   useEffect(() => {
     async function load() {
-      const data = await getUser(id);
-      setUser(data);
-      setLoading(false);
+      try {
+        const data = await getUser(id);
+        setUser(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     if (id) {
       load();
+    } else {
+      setLoading(false);
     }
   }, [id]);
 

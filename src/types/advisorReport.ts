@@ -8,7 +8,6 @@ export interface AdvisorReportStudent {
         level: "LOW" | "MEDIUM" | "HIGH";
         createdAt: string;
         bpm: number | null;
-        spo2: number | null;
         recommendation: string | null;
         aiSummary: string | null;
     } | null;

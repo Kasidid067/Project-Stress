@@ -4,6 +4,8 @@ export interface ActivityLog {
     activityId: number;
     completed: boolean;
     completedAt: string | null;
+    feedbackMood: "BETTER" | "SAME" | "WORSE" | null;
+    feedbackNote: string | null;
     createdAt: string;
     activity: {
         id: number;

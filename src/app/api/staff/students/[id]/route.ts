@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { Role } from "@prisma/client";
 
 export async function GET(
     req: Request,
@@ -24,6 +25,7 @@ export async function GET(
 
         where: {
             id: Number(id),
+            role: Role.STUDENT,
         },
 
         include: {
@@ -70,7 +72,7 @@ export async function GET(
     if (!student) {
 
         return NextResponse.json(
-            { message: "ไม่พบนักศึกษา" },
+            { message: "ไม่พบนิสิต" },
             { status: 404 }
         );
 

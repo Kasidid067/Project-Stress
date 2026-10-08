@@ -1,6 +1,7 @@
 "use client";
 
 import { useActivityLog } from "@/hooks/useActivityLog";
+import { activityCategoryLabel, stressLevelLabel } from "@/lib/displayLabels";
 
 export default function StudentHistoryPage() {
 
@@ -25,9 +26,9 @@ export default function StudentHistoryPage() {
     }
 
     return (
-        <main className="mx-auto max-w-6xl p-8">
+        <main className="wellness-page mx-auto max-w-6xl p-5 sm:p-8">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-green-700">
+                <h1 className="text-3xl font-bold text-teal-800 dark:text-teal-200">
                     ประวัติการทำกิจกรรม
                 </h1>
                 <p className="mt-2 text-[var(--content-muted)]">
@@ -35,7 +36,7 @@ export default function StudentHistoryPage() {
                 </p>
             </div>
             {logs.length === 0 && (
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-10 text-center shadow" style={{ boxShadow: "var(--shadow)" }}>
+                <div className="wellness-card p-10 text-center">
                     <div className="text-6xl">
                         📋
                     </div>
@@ -49,9 +50,9 @@ export default function StudentHistoryPage() {
             )}
 
             {logs.length > 0 && (
-                <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow" style={{ boxShadow: "var(--shadow)" }}>
+                <div className="wellness-card overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-green-600 text-white">
+                        <thead className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white">
                             <tr>
                                 <th className="p-4 text-left">
                                     กิจกรรม
@@ -77,10 +78,10 @@ export default function StudentHistoryPage() {
                                         {log.activity.title}
                                     </td>
                                     <td className="p-4 text-center">
-                                        {log.activity.category}
+                                        {activityCategoryLabel(log.activity.category)}
                                     </td>
                                     <td className="p-4 text-center">
-                                        {log.activity.stressLevel}
+                                        {stressLevelLabel(log.activity.stressLevel)}
                                     </td>
                                     <td className="p-4 text-center">
                                         {log.completedAt

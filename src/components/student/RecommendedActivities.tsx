@@ -1,101 +1,14 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, Clock3, Sparkles } from "lucide-react";
+import { activityCategoryLabel } from "@/lib/displayLabels";
 
-interface Activity {
-    id: number;
-    title: string;
-    description: string;
-    image?: string | null;
-    duration: number;
-    category: string;
-}
+interface Activity { id: number; title: string; description: string; image?: string | null; duration: number; category: string; recommendationReasons: string[]; }
+interface Props { activities: Activity[]; }
+const categoryEmoji: Record<string, string> = { RELAX: "🛋️", EXERCISE: "🏃", MEDITATION: "🧘", MUSIC: "🎵", OTHER: "✨" };
 
-interface Props {
-    activities: Activity[];
-}
-
-const categoryEmoji: Record<string, string> = {
-    RELAX: "🛌",
-    EXERCISE: "🏃",
-    MEDITATION: "🧘",
-    MUSIC: "🎵",
-    OTHER: "⭐",
-};
-
-export default function RecommendedActivities({
-    activities,
-}: Props) {
-    return (
-        <div className="theme-card rounded-2xl p-6">
-            <div className="mb-6 flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-bold">
-                        🎯 กิจกรรมที่แนะนำ
-                    </h2>
-                    <p className="text-sm text-[var(--content-muted)]">
-                        ระบบแนะนำกิจกรรมตามระดับความเครียดของคุณ
-                    </p>
-                </div>
-            </div>
-            {activities.length === 0 ? (
-                <div className="flex h-52 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)]">
-                    <div className="text-center">
-                        <div className="text-6xl">
-                            📭
-                        </div>
-                        <p className="mt-3 text-[var(--content-muted)]">
-                            ยังไม่มีกิจกรรมแนะนำ
-                        </p>
-                    </div>
-                </div>
-            ) : (
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                    {activities.map((activity) => (
-                        <div
-                            key={activity.id}
-                            className="theme-card-soft overflow-hidden rounded-2xl transition duration-300 hover:-translate-y-1 hover:shadow-xl"
-                        >
-                            {activity.image ? (
-                                <div className="relative h-44 w-full">
-                                    <Image
-                                        src={activity.image}
-                                        alt={activity.title}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                </div>
-                            ) : (
-                                <div className="flex h-44 items-center justify-center bg-[var(--surface-muted)] text-6xl">
-                                    {categoryEmoji[
-                                        activity.category
-                                    ] ?? "🎯"}
-
-                                </div>
-                            )}
-                            <div className="p-5">
-                                <h3 className="text-xl font-bold">
-                                    {activity.title}
-                                </h3>
-                                <p className="mt-3 line-clamp-3 text-sm text-[var(--content-muted)]">
-                                    {activity.description}
-                                </p>
-                                <div className="mt-5 flex items-center justify-between">
-                                    <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-sm font-medium text-[var(--content-text)] border border-[var(--border)]">
-                                        ⏱ {activity.duration} นาที
-                                    </span>
-                                    <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs text-[var(--content-muted)] border border-[var(--border)]">
-                                        {activity.category}
-                                    </span>
-                                </div>
-                                <button
-                                    className="mt-6 w-full rounded-xl bg-[var(--accent)] py-3 font-semibold text-white transition hover:opacity-90"
-                                >
-                                    เริ่มกิจกรรม
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
+export default function RecommendedActivities({ activities }: Props) {
+  return <section className="wellness-card p-6 sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><div className="flex items-center gap-2 text-rose-500"><Sparkles size={18} /><span className="text-sm font-semibold">ดูแลใจทีละนิด</span></div><h2 className="mt-2 text-2xl font-bold">กิจกรรมที่แนะนำ</h2><p className="mt-1 text-sm text-[var(--content-muted)]">เลือกสิ่งเล็ก ๆ ที่เหมาะกับคุณในวันนี้</p></div><Link href="/student/activity" className="group flex items-center gap-1 text-sm font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-300">ดูกิจกรรมทั้งหมด <ArrowRight size={16} className="transition group-hover:translate-x-1" /></Link></div>
+    {activities.length === 0 ? <div className="mt-6 flex h-48 items-center justify-center rounded-3xl bg-[var(--surface-muted)] text-center"><div><div className="text-4xl">🌿</div><p className="mt-3 text-sm text-[var(--content-muted)]">ยังไม่มีกิจกรรมแนะนำในตอนนี้</p></div></div> : <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{activities.map((activity) => <article key={activity.id} className="overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] transition hover:-translate-y-1 hover:shadow-lg">{activity.image ? <div className="relative h-36"><Image src={activity.image} alt={activity.title} fill className="object-cover" /></div> : <div className="flex h-36 items-center justify-center bg-gradient-to-br from-teal-50 to-sky-50 text-5xl dark:from-teal-950/40 dark:to-sky-950/35">{categoryEmoji[activity.category] ?? "✨"}</div>}<div className="p-5"><h3 className="text-lg font-bold">{activity.title}</h3><p className="mt-2 line-clamp-2 text-sm leading-6 text-[var(--content-muted)]">{activity.description}</p>{activity.recommendationReasons.length > 0 && <p className="mt-3 rounded-xl bg-teal-50 px-3 py-2 text-xs font-medium text-teal-800 dark:bg-teal-950/35 dark:text-teal-100">แนะนำเพราะ: {activity.recommendationReasons.join(" · ")}</p>}<div className="mt-4 flex items-center justify-between"><span className="flex items-center gap-1.5 text-sm font-medium text-teal-700 dark:text-teal-300"><Clock3 size={15} /> {activity.duration} นาที</span><span className="rounded-full bg-white px-2.5 py-1 text-xs text-[var(--content-muted)] shadow-sm dark:bg-slate-800">{activityCategoryLabel(activity.category)}</span></div></div></article>)}</div>}
+  </section>;
 }

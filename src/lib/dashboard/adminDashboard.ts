@@ -15,7 +15,6 @@ export async function getAdminDashboardData() {
         lowStress,
         mediumStress,
         highStress,
-        latestAssessments,
         highStressStudents,
         monthlyAssessments,
         recommendedActivities,
@@ -69,21 +68,6 @@ export async function getAdminDashboardData() {
         }),
 
         prisma.stressResult.findMany({
-            take: 10,
-            orderBy: {
-                createdAt: "desc",
-            },
-            include: {
-                user: {
-                    select: {
-                        fullname: true,
-                        studentId: true,
-                    },
-                },
-            },
-        }),
-
-        prisma.stressResult.findMany({
             where: {
                 stressLevel: StressLevel.HIGH,
             },
@@ -97,6 +81,7 @@ export async function getAdminDashboardData() {
                     select: {
                         studentId: true,
                         fullname: true,
+                        phone: true,
                     },
                 },
             },
@@ -141,13 +126,13 @@ export async function getAdminDashboardData() {
         mediumStress,
         highStress,
 
-        latestAssessments,
-
         highStressStudents,
 
         monthlyAssessments:
             monthlyAssessments.map(item => ({
-                month: item.month,
+                // MySQL may return aggregate/date-expression values as BigInt.
+                // Convert every numeric field before returning JSON from the API.
+                month: Number(item.month),
                 total: Number(item.total),
             })),
         

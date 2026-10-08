@@ -35,7 +35,7 @@ export default function ReportFilter({
             </h2>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                {/* สาขา */}
+                {/* หลักสูตร */}
                 <select
                     value={filter.majorId ?? ""}
                     onChange={(e) =>
@@ -50,7 +50,7 @@ export default function ReportFilter({
                 >
 
                     <option value="">
-                        ทุกสาขา
+                        ทุกหลักสูตร
                     </option>
 
                     {majors.map((major) => (
@@ -127,7 +127,7 @@ export default function ReportFilter({
 
                 <input
                     type="text"
-                    placeholder="ค้นหาชื่อหรือรหัสนักศึกษา"
+                    placeholder="ค้นหาชื่อหรือรหัสนิสิต"
 
                     value={filter.search ?? ""}
 

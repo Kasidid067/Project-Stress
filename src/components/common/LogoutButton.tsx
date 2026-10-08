@@ -11,10 +11,11 @@ export default function LogoutButton() {
           callbackUrl: "/auth/login",
         })
       }
-      className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-2.5 font-medium text-red-500 transition hover:bg-red-500 hover:text-white"
+      aria-label="ออกจากระบบ"
+      className="app-logout-button flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-2.5 font-medium text-red-500 transition hover:bg-red-500 hover:text-white sm:px-4"
     >
       <LogOut size={16} />
-      ออกจากระบบ
+      <span className="hidden sm:inline">ออกจากระบบ</span>
     </button>
   );
 }

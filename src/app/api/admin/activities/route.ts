@@ -1,163 +1,82 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
     ActivityCategory,
     Role,
     StressLevel,
 } from "@prisma/client";
 
-interface Params {
-    params: Promise<{
-        id: string;
-    }>;
-}
+export async function GET() {
+    try {
+        const session = await auth();
 
-// =========================
-// GET Activity By ID
-// =========================
-export async function GET(
-    req: Request,
-    { params }: Params
-) {
-    const session = await auth();
-    if (
-        !session?.user ||
-        session.user.role !== Role.ADMIN
-    ) {
-        return NextResponse.json(
-            {
-                message: "Forbidden",
-            },
-            {
-                status: 403,
-            }
-        );
-    }
-    const { id } = await params;
-    const activity =
-        await prisma.activity.findUnique({
-            where: {
-                id: Number(id),
+        if (!session?.user || session.user.role !== Role.ADMIN) {
+            return NextResponse.json(
+                { message: "Forbidden" },
+                { status: 403 }
+            );
+        }
+
+        const activities = await prisma.activity.findMany({
+            orderBy: {
+                title: "asc",
             },
         });
-    if (!activity) {
+
+        return NextResponse.json(activities);
+    } catch (error) {
+        console.error(error);
+
         return NextResponse.json(
             {
-                message: "ไม่พบกิจกรรม",
+                message: "Server Error",
             },
             {
-                status: 404,
+                status: 500,
             }
         );
     }
-    return NextResponse.json(
-        activity
-    );
 }
 
-// =========================
-// UPDATE
-// =========================
-export async function PUT(
-    req: Request,
-    { params }: Params
-) {
-    const session = await auth();
-    if (
-        !session?.user ||
-        session.user.role !== Role.ADMIN
-    ) {
-        return NextResponse.json(
-            {
-                message: "Forbidden",
-            },
-            {
-                status: 403,
-            }
-        );
-    }
-    const { id } = await params;
-    const body =
-        await req.json();
-    const {
-        title,
-        description,
-        duration,
-        stressLevel,
-        category,
-        image,
-    } = body;
-    const activity =
-        await prisma.activity.update({
-            where: {
-                id: Number(id),
-            },
-            data: {
-                title,
-                description,
-                duration:
-                    Number(duration),
-                stressLevel:
-                    stressLevel as StressLevel,
-                category:
-                    category as ActivityCategory,
-                image:
-                    image ?? null,
-            },
-        });
-    return NextResponse.json(
-        activity
-    );
-}
+export async function POST(req: NextRequest) {
+    try {
+        const session = await auth();
 
-// =========================
-// DELETE
-// =========================
-export async function DELETE(
-    req: Request,
-    { params }: Params
-) {
-    const session = await auth();
-    if (
-        !session?.user ||
-        session.user.role !== Role.ADMIN
-    ) {
+        if (!session?.user || session.user.role !== Role.ADMIN) {
+            return NextResponse.json(
+                { message: "Forbidden" },
+                { status: 403 }
+            );
+        }
+
+        const body = await req.json();
+
+        const activity =
+            await prisma.activity.create({
+                data: {
+                    title: body.title,
+                    description: body.description,
+                    duration: Number(body.duration),
+                    image: body.image ?? null,
+                    category:
+                        body.category as ActivityCategory,
+                    stressLevel:
+                        body.stressLevel as StressLevel,
+                },
+            });
+
+        return NextResponse.json(activity);
+    } catch (error) {
+        console.error(error);
+
         return NextResponse.json(
             {
-                message: "Forbidden",
+                message: "Server Error",
             },
             {
-                status: 403,
+                status: 500,
             }
         );
     }
-    const { id } = await params;
-    // ป้องกันลบถ้ามี ActivityLog อ้างอิง
-    const logCount =
-        await prisma.activityLog.count({
-            where: {
-                activityId:
-                    Number(id),
-            },
-        });
-    if (logCount > 0) {
-        return NextResponse.json(
-            {
-                message:
-                    "ไม่สามารถลบกิจกรรมนี้ได้ เนื่องจากมีประวัติการใช้งานแล้ว",
-            },
-            {
-                status: 400,
-            }
-        );
-    }
-    await prisma.activity.delete({
-        where: {
-            id: Number(id),
-        },
-    });
-    return NextResponse.json({
-        success: true,
-    });
 }

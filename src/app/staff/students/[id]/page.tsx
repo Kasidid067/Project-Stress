@@ -3,6 +3,8 @@
 import { useParams } from "next/navigation";
 
 import { useStaffStudent } from "@/hooks/useStaffStudent";
+import { stressLevelLabel } from "@/lib/displayLabels";
+import RiskFollowUpPanel from "@/components/risk/RiskFollowUpPanel";
 
 export default function StaffStudentDetailPage() {
 
@@ -37,7 +39,7 @@ export default function StaffStudentDetailPage() {
 
     return (
 
-        <main className="mx-auto max-w-6xl p-8 space-y-6">
+        <main className="staff-page mx-auto max-w-6xl space-y-6 p-2 sm:p-4">
 
             <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow" style={{ boxShadow: "var(--shadow)" }}>
 
@@ -47,15 +49,14 @@ export default function StaffStudentDetailPage() {
 
                 <div className="mt-4 space-y-2">
 
-                    <p>รหัสนักศึกษา : {student.studentId}</p>
+                    <p>รหัสนิสิต : {student.studentId}</p>
 
-                    <p>Email : {student.email}</p>
+                    <p>อีเมล : {student.email}</p>
 
                     <p>เบอร์โทร : {student.phone ?? "-"}</p>
 
-                    <p>สาขา : {student.major.name}</p>
+                    <p>หลักสูตร : {student.major.name}</p>
 
-                    <p>ชั้นปี : {student.year}</p>
 
                     <p>
                         อาจารย์ที่ปรึกษา :
@@ -67,6 +68,8 @@ export default function StaffStudentDetailPage() {
 
             </div>
 
+            <RiskFollowUpPanel studentId={student.id} />
+
             <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow" style={{ boxShadow: "var(--shadow)" }}>
 
                 <h2 className="mb-4 text-2xl font-bold">
@@ -74,13 +77,7 @@ export default function StaffStudentDetailPage() {
                 </h2>
 
                 <p className="text-4xl font-bold text-red-500">
-                    {student.pulses[0]?.bpm ?? "-"} BPM
-                </p>
-
-                <p>
-                    SpO₂ :
-                    {" "}
-                    {student.pulses[0]?.spo2 ?? "-"} %
+                    {student.pulses[0]?.bpm ?? "-"} ครั้ง/นาที
                 </p>
 
             </div>
@@ -106,13 +103,13 @@ export default function StaffStudentDetailPage() {
 
                                     คะแนน :
                                     {" "}
-                                    {result.stressScore}
+                                    {result.stressScore}%
 
                                 </div>
 
                                 <div>
 
-                                    {result.stressLevel}
+                                    {stressLevelLabel(result.stressLevel)}
 
                                 </div>
 

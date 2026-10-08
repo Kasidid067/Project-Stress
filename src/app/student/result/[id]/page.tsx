@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { use } from "react";
 import { useStudentResult } from "@/hooks/useStudentResult";
+import { activityCategoryLabel } from "@/lib/displayLabels";
 
 interface Props {
     params: Promise<{
@@ -46,7 +47,7 @@ export default function ResultPage({
                         href="/student/dashboard"
                         className="mt-6 inline-block rounded-lg bg-green-600 px-6 py-3 text-white"
                     >
-                        กลับ Dashboard
+                        กลับแดชบอร์ด
                     </Link>
                 </div>
             </main>
@@ -80,10 +81,10 @@ export default function ResultPage({
     }[result.stressLevel];
 
     return (
-        <main className="mx-auto max-w-6xl space-y-8 p-8">
+        <main className="wellness-page mx-auto max-w-6xl space-y-6 p-5 sm:space-y-8 sm:p-8">
 
             <div
-                className={`rounded-3xl border-l-8 ${config.border} ${config.bg} p-8 shadow`}
+                className={`rounded-3xl border-l-8 ${config.border} ${config.bg} p-6 shadow-lg sm:p-8`}
             >
                 <div className="flex items-center gap-6">
 
@@ -114,14 +115,14 @@ export default function ResultPage({
 
             <div className="grid gap-6 lg:grid-cols-2">
 
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow" style={{ boxShadow: "var(--shadow)" }}>
+                <div className="wellness-card p-6 sm:p-8">
 
                     <h2 className="mb-6 text-xl font-bold">
                         คะแนนรวม
                     </h2>
 
                     <div className="text-6xl font-bold text-green-600">
-                        {result.stressScore}
+                        {result.stressScore}%
                     </div>
 
                     <div
@@ -132,7 +133,7 @@ export default function ResultPage({
 
                 </div>
 
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow" style={{ boxShadow: "var(--shadow)" }}>
+                <div className="wellness-card p-6 sm:p-8">
 
                     <h2 className="mb-6 text-xl font-bold">
                         คำแนะนำ
@@ -149,10 +150,10 @@ export default function ResultPage({
 
             {result.aiSummary && (
 
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-8 shadow" style={{ boxShadow: "var(--shadow)" }}>
+                <div className="wellness-card bg-[var(--surface-muted)] p-6 sm:p-8">
 
                     <h2 className="mb-5 text-xl font-bold">
-                        🤖 AI Summary
+                        สรุปผล
                     </h2>
 
                     <p className="leading-8">
@@ -163,7 +164,7 @@ export default function ResultPage({
 
             )}
 
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow" style={{ boxShadow: "var(--shadow)" }}>
+            <div className="wellness-card p-6 sm:p-8">
 
                 <h2 className="mb-6 text-2xl font-bold">
                     กิจกรรมที่แนะนำ
@@ -183,7 +184,7 @@ export default function ResultPage({
 
                             <div
                                 key={activity.id}
-                                className="rounded-2xl border p-6 transition hover:-translate-y-1 hover:shadow-lg"
+                                className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-6 transition hover:-translate-y-1 hover:shadow-lg"
                             >
 
                                 <h3 className="text-xl font-bold">
@@ -194,6 +195,12 @@ export default function ResultPage({
                                     {activity.description}
                                 </p>
 
+                                {activity.recommendationReasons && activity.recommendationReasons.length > 0 && (
+                                    <p className="mt-3 rounded-xl bg-teal-50 px-3 py-2 text-sm font-medium text-teal-800 dark:bg-teal-950/35 dark:text-teal-100">
+                                        แนะนำเพราะ: {activity.recommendationReasons.join(" · ")}
+                                    </p>
+                                )}
+
                                 <div className="mt-5 flex items-center justify-between">
 
                                     <span className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-700">
@@ -201,7 +208,7 @@ export default function ResultPage({
                                     </span>
 
                                     <span className="text-sm text-[var(--content-muted)]">
-                                        {activity.category}
+                                        {activityCategoryLabel(activity.category)}
                                     </span>
 
                                 </div>
@@ -220,9 +227,9 @@ export default function ResultPage({
 
                 <Link
                     href="/student/dashboard"
-                    className="rounded-xl bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700"
+                    className="rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 px-6 py-3 font-semibold text-white transition hover:-translate-y-0.5"
                 >
-                    กลับ Dashboard
+                    กลับแดชบอร์ด
                 </Link>
 
                 <Link

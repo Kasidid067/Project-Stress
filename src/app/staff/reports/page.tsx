@@ -1,8 +1,37 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, FileSpreadsheet, FileText } from "lucide-react";
 import { useStaffReports } from "@/hooks/useStaffReports";
+import { exportReportsToExcel } from "@/utils/exportExcel";
+import { exportReportsToPDF } from "@/utils/exportPdf";
+import type { Report } from "@/types/report";
+import TablePagination from "@/components/common/TablePagination";
+
+function toExportReports(students: any[]): Report[] {
+    return students.flatMap((student) => {
+        const result = student.results?.[0];
+
+        if (!result) return [];
+
+        return [{
+            id: result.id,
+            createdAt: result.createdAt,
+            stressScore: result.stressScore,
+            stressLevel: result.stressLevel,
+            user: {
+                studentId: student.studentId,
+                fullname: student.fullname,
+                major: { name: student.major.name },
+            },
+        }];
+    });
+}
+
+type Major = {
+    id: number;
+    name: string;
+};
 
 export default function StaffReportsPage() {
 
@@ -21,10 +50,18 @@ export default function StaffReportsPage() {
         setMajor,
     ] = useState("");
 
-    const [
-        year,
-        setYear,
-    ] = useState("");
+    const [majors, setMajors] = useState<Major[]>([]);
+
+    const [stressLevel, setStressLevel] = useState("ALL");
+    const [page, setPage] = useState(1);
+    const pageSize = 10;
+
+    useEffect(() => {
+        fetch("/api/admin/majors", { cache: "no-store" })
+            .then((response) => response.ok ? response.json() : [])
+            .then((data) => setMajors(Array.isArray(data) ? data : []))
+            .catch(() => setMajors([]));
+    }, []);
 
     const filtered =
         useMemo(() => {
@@ -56,13 +93,9 @@ export default function StaffReportsPage() {
 
                         student.major.name === major;
 
-                    const matchYear =
-
-                        year === ""
-
-                        ||
-
-                        String(student.year) === year;
+                    const matchStressLevel =
+                        stressLevel === "ALL"
+                        || student.results?.[0]?.stressLevel === stressLevel;
 
                     return (
 
@@ -70,7 +103,7 @@ export default function StaffReportsPage() {
 
                         matchMajor &&
 
-                        matchYear
+                        matchStressLevel
 
                     );
 
@@ -86,7 +119,7 @@ export default function StaffReportsPage() {
 
             major,
 
-            year,
+            stressLevel,
 
         ]);
 
@@ -104,22 +137,17 @@ export default function StaffReportsPage() {
 
     }
 
-    const majors = [
-
-        ...new Set(
-
-            reports.map(
-                (item: any) =>
-                    item.major.name
-            )
-
-        ),
-
-    ];
+    const exportableReports = toExportReports(filtered);
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const currentPage = Math.min(page, totalPages);
+    const visibleStudents = filtered.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
 
     return (
 
-        <main className="space-y-8 p-8">
+        <main className="staff-page space-y-8 p-2 sm:p-4">
 
             <div className="flex items-center justify-between">
 
@@ -133,7 +161,7 @@ export default function StaffReportsPage() {
 
                     <p className="mt-2 text-[var(--content-muted)]">
 
-                        รายงานภาพรวมของนักศึกษาทั้งมหาวิทยาลัย
+                        รายงานภาพรวมของนิสิตทั้งมหาวิทยาลัย
 
                     </p>
 
@@ -142,8 +170,10 @@ export default function StaffReportsPage() {
                 <div className="flex gap-3">
 
                     <button
+                        onClick={() => exportReportsToExcel(exportableReports)}
+                        disabled={exportableReports.length === 0}
 
-                        className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-3 font-semibold text-white transition hover:opacity-90"
+                        className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-3 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 
                     >
 
@@ -154,8 +184,10 @@ export default function StaffReportsPage() {
                     </button>
 
                     <button
+                        onClick={() => exportReportsToPDF(exportableReports)}
+                        disabled={exportableReports.length === 0}
 
-                        className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-3 font-semibold text-[var(--content-text)] transition hover:bg-[var(--surface-muted)]"
+                        className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-3 font-semibold text-[var(--content-text)] transition hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
 
                     >
 
@@ -184,13 +216,10 @@ export default function StaffReportsPage() {
 
                             value={keyword}
 
-                            onChange={(e) =>
-
-                                setKeyword(
-                                    e.target.value
-                                )
-
-                            }
+                            onChange={(e) => {
+                                setKeyword(e.target.value);
+                                setPage(1);
+                            }}
 
                             placeholder="ค้นหา"
 
@@ -204,13 +233,10 @@ export default function StaffReportsPage() {
 
                         value={major}
 
-                        onChange={(e) =>
-
-                            setMajor(
-                                e.target.value
-                            )
-
-                        }
+                            onChange={(e) => {
+                                setMajor(e.target.value);
+                                setPage(1);
+                            }}
 
                         className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-3 text-[var(--content-text)] focus:border-[var(--accent)] focus:outline-none"
 
@@ -218,7 +244,7 @@ export default function StaffReportsPage() {
 
                         <option value="">
 
-                            ทุกสาขา
+                            ทุกหลักสูตร
 
                         </option>
 
@@ -228,11 +254,11 @@ export default function StaffReportsPage() {
                                 (item) => (
 
                                     <option
-                                        key={item}
-                                        value={item}
+                                        key={item.id}
+                                        value={item.name}
                                     >
 
-                                        {item}
+                                        {item.name}
 
                                     </option>
 
@@ -244,46 +270,17 @@ export default function StaffReportsPage() {
                     </select>
 
                     <select
-
-                        value={year}
-
-                        onChange={(e) =>
-
-                            setYear(
-                                e.target.value
-                            )
-
-                        }
-
+                        value={stressLevel}
+                        onChange={(e) => {
+                            setStressLevel(e.target.value);
+                            setPage(1);
+                        }}
                         className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-3 text-[var(--content-text)] focus:border-[var(--accent)] focus:outline-none"
-
                     >
-
-                        <option value="">
-
-                            ทุกชั้นปี
-
-                        </option>
-
-                        {
-
-                            [1, 2, 3, 4].map(
-                                (y) => (
-
-                                    <option
-                                        key={y}
-                                        value={y}
-                                    >
-
-                                        ปี {y}
-
-                                    </option>
-
-                                )
-                            )
-
-                        }
-
+                        <option value="ALL">ทุกระดับความเครียด</option>
+                        <option value="LOW">ความเครียดต่ำ</option>
+                        <option value="MEDIUM">ความเครียดปานกลาง</option>
+                        <option value="HIGH">ความเครียดสูง</option>
                     </select>
 
                 </div>
@@ -310,13 +307,7 @@ export default function StaffReportsPage() {
 
                                 <th className="p-4">
 
-                                    สาขา
-
-                                </th>
-
-                                <th className="p-4">
-
-                                    ปี
+                                    หลักสูตร
 
                                 </th>
 
@@ -327,10 +318,7 @@ export default function StaffReportsPage() {
                                     ระดับ
                                 </th>
                                 <th className="p-4">
-                                    BPM
-                                </th>
-                                <th className="p-4">
-                                    SpO₂
+                                    ชีพจร
                                 </th>
                                 <th className="p-4">
                                     อาจารย์
@@ -355,7 +343,7 @@ export default function StaffReportsPage() {
 
                             ) : (
 
-                                filtered.map(
+                                visibleStudents.map(
                                     (student: any) => {
 
                                         const result =
@@ -383,12 +371,6 @@ export default function StaffReportsPage() {
                                                 <td className="p-4">
 
                                                     {student.major.name}
-
-                                                </td>
-
-                                                <td className="p-4 text-center">
-
-                                                    ปี {student.year}
 
                                                 </td>
 
@@ -441,12 +423,6 @@ export default function StaffReportsPage() {
 
                                                 </td>
 
-                                                <td className="p-4 text-center">
-
-                                                    {result?.pulse?.spo2 ?? "-"}
-
-                                                </td>
-
                                                 <td className="p-4">
 
                                                     {student.advisor
@@ -471,6 +447,13 @@ export default function StaffReportsPage() {
 
                 </div>
 
+                <TablePagination
+                    page={currentPage}
+                    totalItems={filtered.length}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                />
+
                 <div className="mt-6 flex items-center justify-between">
 
                     <p className="text-sm text-[var(--content-muted)]">
@@ -482,6 +465,8 @@ export default function StaffReportsPage() {
                     <div className="flex gap-3">
 
                         <button
+                            onClick={() => exportReportsToExcel(exportableReports)}
+                            disabled={exportableReports.length === 0}
                             className="rounded-lg border border-[var(--border)] px-4 py-2 text-[var(--content-text)] transition hover:bg-[var(--surface-muted)]"
                         >
 
@@ -490,6 +475,8 @@ export default function StaffReportsPage() {
                         </button>
 
                         <button
+                            onClick={() => exportReportsToPDF(exportableReports)}
+                            disabled={exportableReports.length === 0}
                             className="rounded-lg border border-[var(--border)] px-4 py-2 text-[var(--content-text)] transition hover:bg-[var(--surface-muted)]"
                         >
 

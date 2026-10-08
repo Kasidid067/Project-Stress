@@ -1,5 +1,9 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import {
+    addActivityRecommendationReasons,
+    recommendActivitiesFromST5,
+} from "@/lib/st5ActivityRecommendation";
 import { NextResponse } from "next/server";
 import { Role } from "@prisma/client";
 
@@ -34,6 +38,13 @@ export async function GET() {
                         createdAt: "desc",
                     },
                     take: 1,
+                    include: {
+                        assessment: {
+                            include: {
+                                answers: true,
+                            },
+                        },
+                    },
                 },
             },
         });
@@ -66,15 +77,25 @@ export async function GET() {
             },
         });
 
-    const activities =
-        latestResult
-            ? await prisma.activity.findMany({
-                where: {
-                    stressLevel:
-                        latestResult.stressLevel,
-                },
-            })
-            : [];
+    const activities = latestResult
+        ? await prisma.activity.findMany({ orderBy: { title: "asc" } })
+        : [];
+    const levelActivities = latestResult
+        ? activities.filter((activity) => activity.stressLevel === latestResult.stressLevel)
+        : [];
+    const recommendedActivities = latestResult
+        ? recommendActivitiesFromST5(
+            activities,
+            latestResult.assessment.answers,
+            levelActivities
+        )
+        : [];
+    const annotatedActivities = latestResult
+        ? addActivityRecommendationReasons(
+            recommendedActivities,
+            latestResult.assessment.answers
+        )
+        : [];
     return NextResponse.json({
         fullname: user.fullname,
 
@@ -91,13 +112,14 @@ export async function GET() {
             createdAt: item.createdAt,
         })),
 
-        activities: activities.map((activity) => ({
+        activities: annotatedActivities.map((activity) => ({
             id: activity.id,
             title: activity.title,
             description: activity.description,
             duration: activity.duration,
             category: activity.category,
             image: activity.image,
+            recommendationReasons: activity.recommendationReasons,
         })),
     });
 }

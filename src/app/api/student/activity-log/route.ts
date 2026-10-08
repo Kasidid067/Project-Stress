@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { Role } from "@prisma/client";
 
+const feedbackMoods = ["BETTER", "SAME", "WORSE"] as const;
+
 export async function GET() {
 
     const session = await auth();
@@ -59,9 +61,31 @@ export async function POST(
     const body =
         await req.json();
 
-    const {
-        activityId,
-    } = body;
+    const { activityId, feedbackMood, feedbackNote } = body;
+
+    if (!Number.isInteger(activityId)) {
+        return NextResponse.json(
+            { message: "รหัสกิจกรรมไม่ถูกต้อง" },
+            { status: 400 }
+        );
+    }
+
+    if (!feedbackMoods.includes(feedbackMood)) {
+        return NextResponse.json(
+            { message: "กรุณาระบุความรู้สึกหลังทำกิจกรรม" },
+            { status: 400 }
+        );
+    }
+
+    if (
+        feedbackNote !== undefined &&
+        (typeof feedbackNote !== "string" || feedbackNote.length > 1000)
+    ) {
+        return NextResponse.json(
+            { message: "ความคิดเห็นต้องมีความยาวไม่เกิน 1,000 ตัวอักษร" },
+            { status: 400 }
+        );
+    }
 
     const exists =
         await prisma.activityLog.findFirst({
@@ -92,6 +116,8 @@ export async function POST(
                 completed: true,
                 completedAt:
                     new Date(),
+                feedbackMood,
+                feedbackNote: feedbackNote?.trim() || null,
             },
         });
     return NextResponse.json(

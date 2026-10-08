@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { StudentHistory } from "@/types/studentHistory";
+import { stressLevelLabel } from "@/lib/displayLabels";
 
 interface Props {
     history: StudentHistory[];
@@ -68,14 +69,14 @@ export default function HistoryTable({
                                 </td>
 
                                 <td className="text-center">
-                                    {item.stressScore}
+                                    {item.stressScore}%
                                 </td>
 
                                 <td className="text-center">
                                     <span
                                         className={`rounded-full px-3 py-1 ${badge(item.stressLevel)}`}
                                     >
-                                        {item.stressLevel}
+                                        {stressLevelLabel(item.stressLevel)}
                                     </span>
                                 </td>
 

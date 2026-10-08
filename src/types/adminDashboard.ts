@@ -35,8 +35,6 @@ export interface AdminDashboard {
     lowStress: number;
     mediumStress: number;
     highStress: number;
-    latestAssessments: LatestAssessment[];
-
     monthlyAssessments: MonthlyAssessment[];
 
     highStressStudents: HighStressStudent[];
@@ -52,6 +50,7 @@ export interface HighStressStudent {
     user: {
         studentId: string;
         fullname: string;
+        phone: string | null;
     };
 }
 

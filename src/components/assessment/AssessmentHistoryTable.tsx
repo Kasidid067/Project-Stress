@@ -4,6 +4,9 @@ import {
     Eye,
     HeartPulse,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { stressLevelLabel } from "@/lib/displayLabels";
+import TablePagination from "@/components/common/TablePagination";
 
 interface Props {
     history: any[];
@@ -14,10 +17,22 @@ export default function AssessmentHistoryTable({
     history,
     onView,
 }: Props) {
+    const [page, setPage] = useState(1);
+    const pageSize = 10;
+    const totalPages = Math.max(1, Math.ceil(history.length / pageSize));
+    const currentPage = Math.min(page, totalPages);
+    const visibleHistory = useMemo(
+        () => history.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+        [currentPage, history]
+    );
+
+    useEffect(() => {
+        setPage(1);
+    }, [history]);
 
     if (history.length === 0) {
         return (
-            <div className="theme-card rounded-xl p-10 text-center">
+            <div className="wellness-card p-10 text-center">
                 <p className="text-[var(--content-muted)]">
                     ยังไม่มีประวัติการประเมิน
                 </p>
@@ -26,11 +41,12 @@ export default function AssessmentHistoryTable({
     }
 
     return (
-        <div className="theme-card overflow-hidden rounded-2xl">
+        <div className="wellness-card overflow-hidden p-0">
 
+            <div className="overflow-x-auto">
             <table className="w-full">
 
-                <thead className="bg-[var(--accent)] text-white">
+                <thead className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white">
 
                     <tr>
 
@@ -47,11 +63,7 @@ export default function AssessmentHistoryTable({
                         </th>
 
                         <th className="text-center">
-                            BPM
-                        </th>
-
-                        <th className="text-center">
-                            SpO₂
+                            ชีพจร
                         </th>
 
                         <th className="text-center">
@@ -64,7 +76,7 @@ export default function AssessmentHistoryTable({
 
                 <tbody>
 
-                    {history.map((item) => (
+                    {visibleHistory.map((item) => (
 
                         <tr
                             key={item.id}
@@ -83,7 +95,7 @@ export default function AssessmentHistoryTable({
 
                             <td className="text-center font-bold">
 
-                                {item.stressScore}
+                                {item.stressScore}%
 
                             </td>
 
@@ -102,7 +114,7 @@ ${item.stressLevel === "LOW"
 `}
                                 >
 
-                                    {item.stressLevel}
+                                    {stressLevelLabel(item.stressLevel)}
 
                                 </span>
 
@@ -116,19 +128,13 @@ ${item.stressLevel === "LOW"
 
                             <td className="text-center">
 
-                                {item.pulse?.spo2 ?? "-"}
-
-                            </td>
-
-                            <td className="text-center">
-
                                 <button
 
                                     onClick={() =>
                                         onView(item)
                                     }
 
-                                    className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-white hover:opacity-90"
+                                    className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-white shadow-sm hover:bg-teal-700"
 
                                 >
 
@@ -147,6 +153,16 @@ ${item.stressLevel === "LOW"
                 </tbody>
 
             </table>
+            </div>
+
+            <div className="px-5 pb-5">
+                <TablePagination
+                    page={currentPage}
+                    totalItems={history.length}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                />
+            </div>
 
         </div>
     );

@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 
 import {
   calculateScore,
-  calculateStressLevel,
 } from "@/lib/st5";
 
 export async function POST(req: NextRequest) {
@@ -21,7 +20,8 @@ export async function POST(req: NextRequest) {
 
   const score = calculateScore(answers);
 
-  const level = calculateStressLevel(score);
+  const percentScore = Math.round((score / 15) * 100);
+  const level = percentScore <= 40 ? "LOW" : percentScore <= 70 ? "MEDIUM" : "HIGH";
 
   const assessment = await prisma.sT5Assessment.create({
     data: {
@@ -44,14 +44,14 @@ export async function POST(req: NextRequest) {
     data: {
       userId: Number(session.user.id),
       assessmentId: assessment.id,
-      stressScore: score,
+      stressScore: percentScore,
       stressLevel: level,
     },
   });
 
   return NextResponse.json({
     success: true,
-    score,
+    score: percentScore,
     level,
   });
 }

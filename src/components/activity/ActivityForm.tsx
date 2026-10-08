@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Activity } from "@/types/activity";
 
 interface Props {
@@ -70,9 +71,9 @@ export default function ActivityForm({
             setSaving(false);
         }
     }
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="theme-card w-full max-w-xl rounded-2xl p-6">
+    return createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="theme-card max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl p-6">
                 <h2 className="mb-6 text-2xl font-bold">
                     {initialData
                         ? "แก้ไขกิจกรรม"
@@ -165,6 +166,7 @@ export default function ActivityForm({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

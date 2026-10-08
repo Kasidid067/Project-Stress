@@ -30,6 +30,7 @@ export async function GET() {
                     role: Role.STUDENT,
                 },
                 include: {
+                    major: true,
                     results: {
                         orderBy: {
                             createdAt: "desc",
@@ -51,6 +52,8 @@ export async function GET() {
 
         let scoreCount = 0;
         let bpmCount = 0;
+        const followUpLimit = new Date();
+        followUpLimit.setDate(followUpLimit.getDate() - 30);
 
         students.forEach((student) => {
 
@@ -90,6 +93,33 @@ export async function GET() {
 
         });
 
+        const studentSummaries = students.map((student) => {
+            const latest = student.results[0] ?? null;
+            return {
+                id: student.id,
+                fullname: student.fullname,
+                studentId: student.studentId,
+                phone: student.phone,
+                major: student.major.name,
+                latestScore: latest?.stressScore ?? null,
+                latestLevel: latest?.stressLevel ?? null,
+                latestBpm: latest?.pulse?.bpm ?? null,
+                assessedAt: latest?.createdAt ?? null,
+            };
+        });
+
+        const highRiskStudents = studentSummaries
+            .filter((student) => student.latestLevel === StressLevel.HIGH)
+            .sort((left, right) => new Date(right.assessedAt ?? 0).getTime() - new Date(left.assessedAt ?? 0).getTime())
+            .slice(0, 5);
+        const overdueStudents = studentSummaries.filter(
+            (student) => !student.assessedAt || new Date(student.assessedAt) < followUpLimit
+        );
+        const recentStudents = studentSummaries
+            .filter((student) => student.assessedAt)
+            .sort((left, right) => new Date(right.assessedAt!).getTime() - new Date(left.assessedAt!).getTime())
+            .slice(0, 5);
+
         return NextResponse.json({
 
             totalStudents:
@@ -122,6 +152,10 @@ export async function GET() {
                             bpmCount
                         ).toFixed(2)
                     ),
+
+            highRiskStudents,
+            overdueStudents,
+            recentStudents,
 
         });
 

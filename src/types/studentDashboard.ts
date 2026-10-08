@@ -5,6 +5,7 @@ export interface StudentActivity {
     duration: number;
     category: string;
     image: string | null;
+    recommendationReasons: string[];
 }
 
 export interface StudentDashboard {

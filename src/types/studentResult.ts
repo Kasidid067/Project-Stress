@@ -20,5 +20,5 @@ export interface StudentResult {
             };
         };
     };
-    activities: Activity[];
+    activities: (Activity & { recommendationReasons?: string[] })[];
 }

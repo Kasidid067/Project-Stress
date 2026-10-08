@@ -10,9 +10,9 @@ export default function DashboardSection({
   children,
 }: DashboardSectionProps) {
   return (
-    <section className="theme-card rounded-2xl p-6">
+    <section className="wellness-card p-6 sm:p-7">
 
-      <h2 className="mb-6 text-xl font-bold text-[var(--accent-strong)]">
+      <h2 className="mb-6 text-xl font-bold text-teal-800 dark:text-teal-200">
         {title}
       </h2>
 

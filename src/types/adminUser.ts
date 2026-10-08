@@ -6,12 +6,11 @@ export interface AdminUser {
     email: string;
     phone: string | null;
 
-    year: number;
 
     role: string;
+    isSuperAdmin: boolean;
     status: string;
 
-    // เพิ่มสองบรรทัดนี้
     majorId: number;
     advisorId: number | null;
 

@@ -6,6 +6,7 @@ import { getMajors } from "@/services/major.service";
 export interface Major {
   id: number;
   name: string;
+  tracks?: { id: number; name: string }[];
 }
 
 export function useMajor() {

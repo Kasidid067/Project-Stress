@@ -4,13 +4,17 @@ import type { ActivityLog } from "@/types/activityLog";
 const API = "/api/student/activity-log";
 
 export async function completeActivity(
-    activityId: number
+    activityId: number,
+    feedbackMood: "BETTER" | "SAME" | "WORSE",
+    feedbackNote?: string
 ) {
     const { data } =
         await axios.post<ActivityLog>(
             API,
             {
                 activityId,
+                feedbackMood,
+                feedbackNote,
             }
         );
     return data;

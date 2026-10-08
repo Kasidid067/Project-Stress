@@ -7,3 +7,13 @@ export async function getAdvisors() {
 
     return data;
 }
+
+export async function getAdvisorStudents(
+    advisorId: number
+) {
+    const { data } = await axios.get(
+        `/api/admin/advisors/${advisorId}/students`
+    );
+
+    return data;
+}

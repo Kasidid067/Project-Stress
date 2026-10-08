@@ -2,7 +2,6 @@ export interface DashboardData {
   fullname: string;
   studentId: string;
   major: string;
-  year: number;
   role: string;
 
   latestStress: {
@@ -12,6 +11,5 @@ export interface DashboardData {
 
   latestPulse: {
     bpm: number;
-    spo2: number | null;
   } | null;
 }

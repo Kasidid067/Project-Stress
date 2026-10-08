@@ -14,7 +14,7 @@ export default function ST5Question({
 
     return (
 
-        <div className="theme-card rounded-xl p-6">
+        <div className="wellness-card p-5 sm:p-6">
             <h2 className="mb-3 text-xl font-bold">
                 ข้อ {no}
             </h2>
@@ -23,34 +23,45 @@ export default function ST5Question({
                 {question}
             </p>
 
-            <div className="flex flex-wrap gap-6">
-                {[0, 1, 2, 3].map((score) => (
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+
+                {[
+                    { score: 0, text: "เป็นน้อยมากหรือแทบไม่มี" },
+                    { score: 1, text: "เป็นบางครั้ง" },
+                    { score: 2, text: "เป็นบ่อยครั้ง" },
+                    { score: 3, text: "เป็นประจำ" },
+                ].map((item) => (
+
                     <label
-                        key={score}
-                        className="flex cursor-pointer items-center gap-2"
+                        key={item.score}
+                        className={`flex cursor-pointer flex-col items-center rounded-2xl border p-4 transition-all
+            ${value === item.score
+                                ? "border-teal-500 bg-teal-50 shadow-md dark:bg-teal-950/30"
+                                : "border-[var(--border)] hover:border-teal-400 hover:bg-teal-50/60"
+                            }`}
                     >
 
                         <input
                             type="radio"
                             name={`question-${no}`}
-                            value={score}
-                            checked={value === score}
-                            onChange={() => onChange(score)}
-                            className="h-5 w-5"
+                            value={item.score}
+                            checked={value === item.score}
+                            onChange={() => onChange(item.score)}
+                            className="mb-3 h-5 w-5"
                         />
 
-                        <span className="text-lg">
-                            {score}
+                        <span className="text-3xl font-bold text-gray-800">
+                            {item.score}
                         </span>
-                    </label>
-                ))}
-            </div>
 
-            <div className="mt-4 grid grid-cols-4 text-center text-sm text-[var(--content-muted)]">
-                <span>0<br />ไม่เลย</span>
-                <span>1<br />บางครั้ง</span>
-                <span>2<br />บ่อย</span>
-                <span>3<br />เป็นประจำ</span>
+                        <span className="mt-2 text-center text-sm text-[var(--content-muted)]">
+                            {item.text}
+                        </span>
+
+                    </label>
+
+                ))}
+
             </div>
         </div>
     );

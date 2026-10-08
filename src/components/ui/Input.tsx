@@ -9,7 +9,7 @@ export default function Input({
   return (
     <input
       {...props}
-      className={`w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 text-[var(--content-text)] placeholder:text-[var(--content-muted)] focus:border-green-500 focus:outline-none ${className}`}
+      className={`wellness-input w-full p-3 text-[var(--content-text)] placeholder:text-[var(--content-muted)] ${className}`}
     />
   );
 }

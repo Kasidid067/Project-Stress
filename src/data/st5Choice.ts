@@ -1,7 +1,7 @@
 export const ST5_CHOICES = [
   {
     score: 0,
-    text: "แทบไม่มี"
+    text: "น้อยมากหรือแทบไม่มี"
   },
   {
     score: 1,

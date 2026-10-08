@@ -76,13 +76,13 @@ export default function AssessmentHistoryPage() {
 
     return (
 
-        <main className="space-y-8 p-8">
+        <main className="wellness-page space-y-8 p-5 sm:p-8">
 
             <div>
 
                 <h1 className="text-4xl font-bold text-green-700">
 
-                    ประวัติการประเมิน ST-5
+                    ประวัติการประเมิน
 
                 </h1>
 
@@ -94,7 +94,7 @@ export default function AssessmentHistoryPage() {
 
             </div>
 
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow" style={{ boxShadow: "var(--shadow)" }}>
+            <div className="wellness-card p-5 sm:p-6">
 
                 <div className="relative mb-6 max-w-md">
 
@@ -120,7 +120,7 @@ export default function AssessmentHistoryPage() {
 
                         placeholder="ค้นหา..."
 
-                        className="w-full rounded-xl border py-3 pl-11 pr-4"
+                        className="wellness-input w-full py-3 pl-11 pr-4"
 
                     />
 
@@ -163,6 +163,8 @@ export default function AssessmentHistoryPage() {
                 open={!!selected}
 
                 data={selected}
+
+                history={history}
 
                 onClose={() =>
 

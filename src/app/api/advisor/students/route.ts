@@ -1,18 +1,9 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
-import { Role } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
+import { Role, StressLevel } from "@prisma/client";
 
-export async function GET(
-    request: Request,
-    {
-        params,
-    }: {
-        params: Promise<{
-            id: string;
-        }>;
-    }
-) {
+export async function GET(req: NextRequest) {
     try {
         const session = await auth();
 
@@ -21,26 +12,55 @@ export async function GET(
             session.user.role !== Role.ADVISOR
         ) {
             return NextResponse.json(
-                {
-                    message: "Forbidden",
-                },
-                {
-                    status: 403,
-                }
+                { message: "Forbidden" },
+                { status: 403 }
             );
         }
 
-        // ✅ Next.js 15/16 ต้อง await params
-        const { id } = await params;
-
         const advisorId = Number(session.user.id);
 
-        const student = await prisma.user.findFirst({
+        const { searchParams } = new URL(req.url);
+
+        const keyword =
+            searchParams.get("keyword")?.trim() ?? "";
+
+        const majorId =
+            searchParams.get("majorId");
+
+        const stressLevel =
+            searchParams.get("stressLevel");
+
+        const students = await prisma.user.findMany({
             where: {
-                id: Number(id),
                 advisorId,
                 role: Role.STUDENT,
+
+                ...(majorId &&
+                    majorId !== "ALL" && {
+                        majorId: Number(majorId),
+                    }),
+
+                ...(keyword && {
+                    OR: [
+                        {
+                            fullname: {
+                                contains: keyword,
+                            },
+                        },
+                        {
+                            studentId: {
+                                contains: keyword,
+                            },
+                        },
+                        {
+                            email: {
+                                contains: keyword,
+                            },
+                        },
+                    ],
+                }),
             },
+
             include: {
                 major: true,
 
@@ -48,50 +68,90 @@ export async function GET(
                     orderBy: {
                         createdAt: "desc",
                     },
+                    take: 1,
+
                     include: {
                         pulse: true,
-                        assessment: {
-                            include: {
-                                answers: {
-                                    orderBy: {
-                                        questionNo: "asc",
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-
-                activityLogs: {
-                    orderBy: {
-                        createdAt: "desc",
-                    },
-                    include: {
-                        activity: true,
                     },
                 },
             },
+
+            orderBy: {
+                fullname: "asc",
+            },
         });
 
-        if (!student) {
-            return NextResponse.json(
-                {
-                    message: "ไม่พบนักศึกษา",
-                },
-                {
-                    status: 404,
+        const data = students
+            .filter((student) => {
+                if (
+                    !stressLevel ||
+                    stressLevel === "ALL"
+                ) {
+                    return true;
                 }
-            );
-        }
 
-        return NextResponse.json(student);
+                const latest =
+                    student.results[0];
+
+                if (!latest) return false;
+
+                return (
+                    latest.stressLevel ===
+                    (stressLevel as StressLevel)
+                );
+            })
+            .map((student) => {
+
+                const latest =
+                    student.results[0];
+
+                return {
+
+                    id: student.id,
+
+                    studentId:
+                        student.studentId,
+
+                    fullname:
+                        student.fullname,
+
+                    email:
+                        student.email,
+
+
+                    major:
+                        student.major,
+
+                    latestResult: latest
+                        ? {
+                              score:
+                                  latest.stressScore,
+
+                              level:
+                                  latest.stressLevel,
+
+                              bpm:
+                                  latest.pulse?.bpm ??
+                                  null,
+
+                              createdAt:
+                                  latest.createdAt,
+                          }
+                        : null,
+                };
+            });
+
+        return NextResponse.json(data);
     } catch (error) {
-        console.error("Advisor Student Detail Error");
+        console.error(
+            "Advisor Students Error"
+        );
         console.error(error);
 
         return NextResponse.json(
             {
-                message: "Internal Server Error",
+                message:
+                    "Internal Server Error",
             },
             {
                 status: 500,

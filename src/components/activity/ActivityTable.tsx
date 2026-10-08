@@ -2,6 +2,9 @@
 
 import type { Activity } from "@/types/activity";
 import { Pencil, Trash2 } from "lucide-react";
+import { activityCategoryLabel } from "@/lib/displayLabels";
+import { useEffect, useMemo, useState } from "react";
+import TablePagination from "@/components/common/TablePagination";
 
 interface Props {
     activities: Activity[];
@@ -40,6 +43,18 @@ export default function ActivityTable({
     onEdit,
     onDelete,
 }: Props) {
+    const [page, setPage] = useState(1);
+    const pageSize = 10;
+    const totalPages = Math.max(1, Math.ceil(activities.length / pageSize));
+    const currentPage = Math.min(page, totalPages);
+    const visibleActivities = useMemo(
+        () => activities.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+        [activities, currentPage]
+    );
+
+    useEffect(() => {
+        setPage(1);
+    }, [activities]);
 
     if (activities.length === 0) {
 
@@ -53,8 +68,9 @@ export default function ActivityTable({
 
     return (
 
-        <div className="theme-card overflow-hidden rounded-xl">
+        <div className="theme-card overflow-hidden rounded-xl p-0">
 
+            <div className="overflow-x-auto">
             <table className="min-w-full">
 
                 <thead className="bg-[var(--surface-muted)] text-[var(--content-muted)]">
@@ -87,7 +103,7 @@ export default function ActivityTable({
 
                 <tbody>
 
-                    {activities.map((activity) => (
+                    {visibleActivities.map((activity) => (
 
                         <tr
                             key={activity.id}
@@ -106,7 +122,7 @@ export default function ActivityTable({
                             </td>
 
                             <td className="p-4 text-center">
-                                {activity.category}
+                                {activityCategoryLabel(activity.category)}
                             </td>
 
                             <td className="p-4 text-center">
@@ -147,6 +163,16 @@ export default function ActivityTable({
                     ))}
                 </tbody>
             </table>
+            </div>
+
+            <div className="px-5 pb-5">
+                <TablePagination
+                    page={currentPage}
+                    totalItems={activities.length}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                />
+            </div>
         </div>
     );
 }

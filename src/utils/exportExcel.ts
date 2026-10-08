@@ -8,13 +8,13 @@ export function exportReportsToExcel(
 
     const data = reports.map((report) => ({
 
-        "รหัสนักศึกษา":
+        "รหัสนิสิต":
             report.user.studentId,
 
         "ชื่อ":
             report.user.fullname,
 
-        "สาขา":
+        "หลักสูตร":
             report.user.major.name,
 
         "คะแนน":

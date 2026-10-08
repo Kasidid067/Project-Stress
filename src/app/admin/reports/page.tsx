@@ -39,7 +39,7 @@ export default function AdminReportsPage() {
   ).length;
 
   return (
-    <main className="space-y-6">
+    <main className="admin-page wellness-page space-y-6">
 
       {/* Header */}
       <div>

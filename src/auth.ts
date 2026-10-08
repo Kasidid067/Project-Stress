@@ -1,10 +1,13 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
-import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+
+class AccountSuspendedError extends CredentialsSignin {
+  code = "account_suspended";
+}
 
 function isAuthBypassEnabled() {
   return (
@@ -16,9 +19,11 @@ function isAuthBypassEnabled() {
 const fakeSession = {
   user: {
     id: "1",
-    name: "Development User",
+    name: "ผู้ดูแลระบบสำหรับพัฒนา",
+    fullname: "ผู้ดูแลระบบสำหรับพัฒนา",
     email: "dev@example.com",
     role: "ADMIN",
+    isSuperAdmin: true,
   },
 };
 
@@ -39,11 +44,11 @@ const nextAuth = NextAuth({
 
       credentials: {
         studentId: {
-          label: "Student ID",
+          label: "รหัสผู้ใช้งาน",
           type: "text",
         },
         password: {
-          label: "Password",
+          label: "รหัสผ่าน",
           type: "password",
         },
       },
@@ -63,11 +68,6 @@ const nextAuth = NextAuth({
           return null;
         }
 
-        // ถ้ามี status ใน User
-        if ("status" in user && user.status === "INACTIVE") {
-          return null;
-        }
-
         const valid = await bcrypt.compare(
           credentials.password as string,
           user.password
@@ -77,7 +77,11 @@ const nextAuth = NextAuth({
           return null;
         }
 
-        // อัปเดตเวลา Login ล่าสุด
+        // ตรวจรหัสผ่านก่อน เพื่อไม่เปิดเผยสถานะบัญชีแก่ผู้ที่ไม่ใช่เจ้าของบัญชี
+        if (user.status === "INACTIVE") {
+          throw new AccountSuspendedError();
+        }
+
         await prisma.user.update({
           where: {
             id: user.id,
@@ -90,8 +94,10 @@ const nextAuth = NextAuth({
         return {
           id: String(user.id),
           name: user.fullname,
+          fullname: user.fullname,
           email: user.email,
           role: user.role,
+          isSuperAdmin: user.isSuperAdmin,
         };
       },
     }),
@@ -102,6 +108,9 @@ const nextAuth = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.name = user.name;
+        token.fullname = (user as any).fullname;
+        token.isSuperAdmin = (user as any).isSuperAdmin;
       }
 
       return token;
@@ -111,6 +120,14 @@ const nextAuth = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+
+        session.user.name = token.name as string;
+
+        (session.user as any).fullname =
+          token.fullname as string;
+
+        (session.user as any).isSuperAdmin =
+          Boolean(token.isSuperAdmin);
       }
 
       return session;

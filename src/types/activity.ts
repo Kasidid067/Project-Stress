@@ -16,4 +16,5 @@ export interface Activity {
         | "HIGH";
     createdAt: string;
     updatedAt: string;
+    recommendationReasons?: string[];
 }

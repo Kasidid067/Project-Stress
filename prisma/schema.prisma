@@ -33,13 +33,66 @@ enum UserStatus {
   INACTIVE
 }
 
+enum NotificationType {
+  ASSESSMENT
+  HIGH_STRESS
+  ACTIVITY
+  GENERAL
+}
+
+enum ActivityFeedbackMood {
+  BETTER
+  SAME
+  WORSE
+}
+
+enum StudentSupportRequestType {
+  ADVISOR_CHANGE
+  PROFILE_CORRECTION
+}
+
+enum StudentSupportRequestStatus {
+  PENDING
+  RESOLVED
+  REJECTED
+}
+
+enum StudentRiskFollowUpStatus {
+  NOT_CONTACTED
+  CONTACTED
+  FOLLOW_UP_SCHEDULED
+  CLOSED
+}
+
+enum PulseMeasurementStatus {
+  PENDING
+  MEASURING
+  COMPLETED
+  EXPIRED
+}
+
 model Major {
   id        Int      @id @default(autoincrement())
   name      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  users  User[]
+  tracks MajorTrack[]
+}
+
+model MajorTrack {
+  id        Int      @id @default(autoincrement())
+  name      String
+  majorId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  major Major @relation(fields: [majorId], references: [id], onDelete: Cascade)
   users User[]
+
+  @@unique([majorId, name])
+  @@index([majorId])
 }
 
 model User {
@@ -49,12 +102,13 @@ model User {
   phone     String?
   email     String  @unique
   password  String
-  year      Int
 
   role   Role       @default(STUDENT)
+  isSuperAdmin Boolean @default(false)
   status UserStatus @default(ACTIVE)
 
   majorId   Int
+  trackId   Int?
   advisorId Int?
   lastLogin DateTime?
 
@@ -62,29 +116,74 @@ model User {
   updatedAt DateTime @updatedAt
 
   major    Major  @relation(fields: [majorId], references: [id])
+  track    MajorTrack? @relation(fields: [trackId], references: [id], onDelete: SetNull)
   advisor  User?  @relation("AdvisorStudents", fields: [advisorId], references: [id], onDelete: SetNull)
   students User[] @relation("AdvisorStudents")
 
   assessments  ST5Assessment[]
   pulses       PulseRecord[]
   results      StressResult[]
+  pss10Assessments PSS10Assessment[]
   activityLogs ActivityLog[]
+  notifications Notification[]
+  supportRequests StudentSupportRequest[]
+  pulseMeasurementSessions PulseMeasurementSession[]
+  riskFollowUps StudentRiskFollowUp[] @relation("StudentRiskFollowUps")
+  handledRiskFollowUps StudentRiskFollowUp[] @relation("RiskFollowUpHandler")
 
   @@index([majorId])
+  @@index([trackId])
   @@index([advisorId])
   @@index([role])
   @@index([status])
   @@index([advisorId, role])
 }
 
+model StudentSupportRequest {
+  id          Int                         @id @default(autoincrement())
+  studentId   Int
+  type        StudentSupportRequestType
+  details     String                      @db.Text
+  status      StudentSupportRequestStatus @default(PENDING)
+  response    String?                     @db.Text
+  handledById Int?
+  handledAt   DateTime?
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, status])
+  @@index([status, createdAt])
+}
+
+// บันทึกแต่ละครั้งคือประวัติการติดตาม เพื่อให้เห็นลำดับการช่วยเหลือนิสิตความเสี่ยง
+model StudentRiskFollowUp {
+  id             Int                       @id @default(autoincrement())
+  studentId      Int
+  status         StudentRiskFollowUpStatus @default(NOT_CONTACTED)
+  note           String?                   @db.Text
+  nextFollowUpAt DateTime?
+  handledById    Int
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  student   User @relation("StudentRiskFollowUps", fields: [studentId], references: [id], onDelete: Cascade)
+  handledBy User @relation("RiskFollowUpHandler", fields: [handledById], references: [id])
+
+  @@index([studentId, createdAt])
+  @@index([status, nextFollowUpAt])
+}
+
 model ST5Assessment {
-  id         Int           @id @default(autoincrement())
-  userId     Int
-  totalScore Int
-  createdAt  DateTime      @default(now())
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  answers    ST5Answer[]
-  result     StressResult?
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  totalScore    Int
+  createdAt     DateTime       @default(now())
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers       ST5Answer[]
+  result        StressResult?
+  notifications Notification[]
 
   @@index([userId])
 }
@@ -99,16 +198,63 @@ model ST5Answer {
   @@index([assessmentId])
 }
 
+model PSS10Assessment {
+  id         Int         @id @default(autoincrement())
+  userId     Int
+  totalScore Int
+  createdAt  DateTime    @default(now())
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers    PSS10Answer[]
+
+  @@index([userId])
+}
+
+model PSS10Answer {
+  id           Int             @id @default(autoincrement())
+  assessmentId Int
+  questionNo   Int
+  score        Int
+  assessment   PSS10Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, questionNo])
+  @@index([assessmentId])
+}
+
 model PulseRecord {
   id         Int           @id @default(autoincrement())
   userId     Int
   bpm        Int
-  spo2       Float?
   recordedAt DateTime      @default(now())
   user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   result     StressResult?
 
   @@index([userId])
+}
+
+// คิวชั่วคราวสำหรับเชื่อมปุ่มวัดบนเว็บกับบอร์ดวัดชีพจรที่ใช้ร่วมกัน
+model PulseMeasurementSession {
+  id          Int                    @id @default(autoincrement())
+  token       String                 @unique
+  userId      Int
+  status      PulseMeasurementStatus @default(PENDING)
+  bpm         Int?
+  samples     Json?
+  createdAt   DateTime               @default(now())
+  expiresAt   DateTime
+  completedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, expiresAt])
+  @@index([userId, createdAt])
+}
+
+// สถานะของบอร์ดวัดชีพจรที่ใช้งานร่วมกัน
+// บอร์ดจะอัปเดตเวลา lastSeenAt ทุกครั้งที่เข้ามาดึงคำสั่งวัด
+model SensorDeviceStatus {
+  id         String   @id
+  lastSeenAt DateTime
+  updatedAt  DateTime @updatedAt
 }
 
 model StressResult {
@@ -147,10 +293,31 @@ model ActivityLog {
   activityId  Int
   completed   Boolean   @default(false)
   completedAt DateTime?
+  feedbackMood ActivityFeedbackMood?
+  feedbackNote String? @db.VarChar(1000)
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   activity    Activity  @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([activityId])
+}
+
+model Notification {
+  id           Int              @id @default(autoincrement())
+  userId       Int
+  assessmentId Int?
+  title        String
+  message      String
+  type         NotificationType @default(GENERAL)
+  isRead       Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment ST5Assessment? @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@index([assessmentId])
 }

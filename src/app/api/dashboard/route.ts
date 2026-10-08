@@ -46,7 +46,6 @@ export async function GET() {
     fullname: user.fullname,
     studentId: user.studentId,
     major: user.major.name,
-    year: user.year,
     role: user.role,
 
     latestStress: user.results[0] ?? null,

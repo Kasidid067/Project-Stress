@@ -2,115 +2,120 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { Prisma } from "@prisma/client";
+import { Role, UserStatus } from "@prisma/client";
 
-export async function GET(
-    req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const session = await auth();
+export async function GET() {
+    try {
+        const session = await auth();
 
-    if (!session?.user || session.user.role !== "ADMIN") {
+        if (!session?.user || session.user.role !== Role.ADMIN) {
+            return NextResponse.json(
+                { message: "ไม่มีสิทธิ์ดำเนินการ" },
+                { status: 403 }
+            );
+        }
+
+        const users = await prisma.user.findMany({
+            include: {
+                major: true,
+                track: true,
+                advisor: {
+                    select: {
+                        id: true,
+                        fullname: true,
+                    },
+                },
+            },
+            orderBy: {
+                fullname: "asc",
+            },
+        });
+
+        return NextResponse.json(users);
+    } catch (error) {
+        console.error(error);
+
         return NextResponse.json(
-            { message: "Forbidden" },
-            { status: 403 }
+            {
+                message: "เกิดข้อผิดพลาดในระบบ",
+            },
+            {
+                status: 500,
+            }
         );
     }
-
-    const { id } = await params;
-
-    const user = await prisma.user.findUnique({
-        where: {
-            id: Number(id),
-        },
-        include: {
-            major: true,
-            advisor: true,
-        },
-    });
-
-    return NextResponse.json(user);
 }
 
-export async function PUT(
-    req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const session = await auth();
+export async function POST(req: NextRequest) {
+    try {
+        const session = await auth();
 
-    if (!session?.user || session.user.role !== "ADMIN") {
-        return NextResponse.json(
-            { message: "Forbidden" },
-            { status: 403 }
-        );
-    }
+        if (!session?.user || session.user.role !== Role.ADMIN) {
+            return NextResponse.json(
+                { message: "Forbidden" },
+                { status: 403 }
+            );
+        }
 
-    const { id } = await params;
-    const body = await req.json();
+        const body = await req.json();
 
-    const updateData: Prisma.UserUncheckedUpdateInput = {
-        fullname: body.fullname,
-        email: body.email,
-        phone: body.phone,
-        role: body.role,
-        year: body.year,
-        majorId: body.majorId,
-        advisorId: body.advisorId || null,
-        status: body.status,
-    };
+        const exists = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    {
+                        studentId: body.studentId,
+                    },
+                    {
+                        email: body.email,
+                    },
+                ],
+            },
+        });
 
-    if (body.password) {
-        updateData.password = await bcrypt.hash(
+        if (exists) {
+            return NextResponse.json(
+                {
+                    message: "รหัสผู้ใช้งานหรืออีเมลถูกใช้งานแล้ว",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        const password = await bcrypt.hash(
             body.password,
             10
         );
-    }
 
-    const user = await prisma.user.update({
-        where: {
-            id: Number(id),
-        },
-        data: updateData,
-    });
+        const user = await prisma.user.create({
+            data: {
+                studentId: body.studentId,
+                fullname: body.fullname,
+                email: body.email,
+                phone: body.phone,
+                password,
+                role: body.role,
+                status: body.status ?? UserStatus.ACTIVE,
+                majorId: Number(body.majorId),
+                trackId: body.trackId ? Number(body.trackId) : null,
+                advisorId: body.advisorId
+                    ? Number(body.advisorId)
+                    : null,
+            },
+        });
 
-    return NextResponse.json(user);
-}
+        return NextResponse.json(user);
+    } catch (error) {
+        console.error(error);
 
-export async function DELETE(
-    req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
         return NextResponse.json(
-            { message: "Forbidden" },
-            { status: 403 }
+            {
+                message: "เกิดข้อผิดพลาดในระบบ",
+            },
+            {
+                status: 500,
+            }
         );
     }
-
-    const { id } = await params;
-    const userId = Number(id);
-    const user = await prisma.user.findUnique({
-        where: {
-            id: userId,
-        },
-    });
-
-    if (!user) {
-        return NextResponse.json(
-            { message: "ไม่พบผู้ใช้งาน" },
-            { status: 404 }
-        );
-    }
-
-    await prisma.user.delete({
-        where: {
-            id: userId,
-        },
-    });
-
-    return NextResponse.json({
-        success: true,
-        message: "ลบผู้ใช้งานสำเร็จ",
-    });
 }
